@@ -2,6 +2,11 @@
   const STORAGE_KEY = "smis_local_data_v1";
 
   const seed = {
+    departments: [
+      { id: "d1", name: "Computer Science" },
+      { id: "d2", name: "Mathematics" },
+      { id: "d3", name: "Biology" }
+    ],
     users: [
       { id: "u1", name: "Ada Nwosu", role: "Admin", status: "Active", email: "ada@sms.local" },
       { id: "u2", name: "Femi Ajayi", role: "Lecturer", status: "Active", email: "femi@sms.local" },
@@ -81,9 +86,28 @@
 
     try {
       const parsed = JSON.parse(raw);
+      const students = Array.isArray(parsed.students) ? parsed.students : [];
+      const seededDepartments = Array.isArray(parsed.departments) ? parsed.departments : [];
+      const fromStudents = Array.from(
+        new Set(students.map((student) => String(student.department || "").trim()).filter(Boolean))
+      ).map((name) => ({
+        id: `d-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+        name,
+      }));
+      const mergedDepartments = [...seededDepartments];
+      fromStudents.forEach((dept) => {
+        const exists = mergedDepartments.some(
+          (item) => String(item.name || "").toLowerCase() === dept.name.toLowerCase()
+        );
+        if (!exists) {
+          mergedDepartments.push(dept);
+        }
+      });
+
       return {
+        departments: mergedDepartments,
         users: Array.isArray(parsed.users) ? parsed.users : [],
-        students: Array.isArray(parsed.students) ? parsed.students : [],
+        students,
         courses: Array.isArray(parsed.courses) ? parsed.courses : [],
         registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
         results: Array.isArray(parsed.results) ? parsed.results : []
@@ -178,6 +202,76 @@
     return data.users;
   };
 
+  const getDepartments = () => {
+    const data = read();
+    return data.departments || [];
+  };
+
+  const addDepartment = (payload) => {
+    const data = read();
+    const name = String(payload.name || "").trim();
+    if (!name) {
+      throw new Error("Department name is required");
+    }
+
+    const duplicate = data.departments.some(
+      (item) => String(item.name || "").toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      throw new Error("Department already exists");
+    }
+
+    data.departments.push({ id: uid("d"), name });
+    write(data);
+    return data.departments;
+  };
+
+  const updateDepartment = (id, payload) => {
+    const data = read();
+    const dept = data.departments.find((item) => item.id === id);
+    if (!dept) {
+      throw new Error("Department not found");
+    }
+
+    const name = String(payload.name || "").trim();
+    if (!name) {
+      throw new Error("Department name is required");
+    }
+
+    const duplicate = data.departments.some(
+      (item) => item.id !== id && String(item.name || "").toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      throw new Error("Another department already uses this name");
+    }
+
+    const oldName = dept.name;
+    dept.name = name;
+    data.students = data.students.map((student) => ({
+      ...student,
+      department: student.department === oldName ? name : student.department
+    }));
+    write(data);
+    return data.departments;
+  };
+
+  const deleteDepartment = (id) => {
+    const data = read();
+    const dept = data.departments.find((item) => item.id === id);
+    if (!dept) {
+      throw new Error("Department not found");
+    }
+
+    const inUse = data.students.some((student) => student.department === dept.name);
+    if (inUse) {
+      throw new Error("Cannot delete department assigned to students");
+    }
+
+    data.departments = data.departments.filter((item) => item.id !== id);
+    write(data);
+    return data.departments;
+  };
+
   const updateUser = (id, payload) => {
     const data = read();
     const user = data.users.find((item) => item.id === id);
@@ -235,6 +329,13 @@
       throw new Error("Student number and name are required");
     }
 
+    const validDepartment = data.departments.some(
+      (item) => String(item.name || "").toLowerCase() === department.toLowerCase()
+    );
+    if (!validDepartment) {
+      throw new Error("Please select a valid department");
+    }
+
     const duplicate = data.students.some((student) => student.studentNo.toLowerCase() === studentNo.toLowerCase());
     if (duplicate) {
       throw new Error("Student number already exists");
@@ -260,6 +361,13 @@
 
     if (!studentNo || !name) {
       throw new Error("Student number and name are required");
+    }
+
+    const validDepartment = data.departments.some(
+      (item) => String(item.name || "").toLowerCase() === department.toLowerCase()
+    );
+    if (!validDepartment) {
+      throw new Error("Please select a valid department");
     }
 
     const duplicate = data.students.some(
@@ -595,6 +703,15 @@
     });
   };
 
+  const getStudentsByDepartment = (departmentName) => {
+    const data = read();
+    const target = String(departmentName || "").trim().toLowerCase();
+    if (!target) return [];
+    return data.students.filter(
+      (student) => String(student.department || "").trim().toLowerCase() === target
+    );
+  };
+
   const getAll = () => read();
 
   const exportData = () => JSON.stringify(read(), null, 2);
@@ -607,9 +724,28 @@
       throw new Error("Invalid JSON file");
     }
 
+    const students = Array.isArray(parsed.students) ? parsed.students : [];
+    const seededDepartments = Array.isArray(parsed.departments) ? parsed.departments : [];
+    const fromStudents = Array.from(
+      new Set(students.map((student) => String(student.department || "").trim()).filter(Boolean))
+    ).map((name) => ({
+      id: `d-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      name,
+    }));
+    const mergedDepartments = [...seededDepartments];
+    fromStudents.forEach((dept) => {
+      const exists = mergedDepartments.some(
+        (item) => String(item.name || "").toLowerCase() === dept.name.toLowerCase()
+      );
+      if (!exists) {
+        mergedDepartments.push(dept);
+      }
+    });
+
     const normalized = {
+      departments: mergedDepartments,
       users: Array.isArray(parsed.users) ? parsed.users : [],
-      students: Array.isArray(parsed.students) ? parsed.students : [],
+      students,
       courses: Array.isArray(parsed.courses) ? parsed.courses : [],
       registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
       results: Array.isArray(parsed.results) ? parsed.results : []
@@ -628,6 +764,10 @@
   window.SMISStore = {
     ensure,
     getAll,
+    getDepartments,
+    addDepartment,
+    updateDepartment,
+    deleteDepartment,
     exportData,
     importData,
     resetData,
@@ -646,6 +786,7 @@
     queryResults,
     getCourseOptions,
     getRegisteredCourses,
+    getStudentsByDepartment,
     withStudentName
   };
 })();

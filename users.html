@@ -94,7 +94,9 @@
           </label>
           <label>
             <span>Department</span>
-            <input type="text" name="department" placeholder="Computer Science" required />
+            <select name="department" class="department-select" required>
+              <option value="">Select department</option>
+            </select>
           </label>
           <label>
             <span>Level</span>
@@ -135,6 +137,31 @@
           </tr>
         </thead>
         <tbody id="studentsBody"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Departments</h2>
+      <form id="departmentForm">
+        <div class="form-grid">
+          <label>
+            <span>Department Name</span>
+            <input type="text" name="name" placeholder="e.g. Physics" required />
+          </label>
+        </div>
+        <div class="actions" style="margin-top: 16px;">
+          <button class="btn" type="submit">Add Department</button>
+        </div>
+      </form>
+
+      <table class="table" style="margin-top: 16px;">
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="departmentsBody"></tbody>
       </table>
     </section>
 

@@ -92,10 +92,49 @@ if (store) {
       .join("");
   };
 
+  const renderDepartments = () => {
+    const departmentsBody = document.getElementById("departmentsBody");
+    if (!departmentsBody) return;
+    const departments = store.getDepartments();
+    departmentsBody.innerHTML = departments
+      .map(
+        (department) => `
+          <tr>
+            <td>${escapeHtml(department.name)}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-outline" type="button" data-department-edit="${department.id}">Edit</button>
+                <button class="btn btn-outline" type="button" data-department-delete="${department.id}">Delete</button>
+              </div>
+            </td>
+          </tr>`
+      )
+      .join("");
+  };
+
+  const populateDepartmentSelects = () => {
+    const selects = document.querySelectorAll("select.department-select");
+    if (!selects.length) return;
+    const departments = store.getDepartments();
+    selects.forEach((select) => {
+      const current = select.value;
+      select.innerHTML =
+        '<option value="">Select department</option>' +
+        departments
+          .map((department) => `<option value="${department.name}">${department.name}</option>`)
+          .join("");
+      if (current && departments.some((department) => department.name === current)) {
+        select.value = current;
+      }
+    });
+  };
+
   const refreshAllTables = () => {
     renderUsers();
     renderStudents();
     renderCourses();
+    renderDepartments();
+    populateDepartmentSelects();
   };
 
   const userForm = document.getElementById("userForm");
@@ -133,8 +172,24 @@ if (store) {
           status: formData.get("status")
         });
         studentForm.reset();
-        renderStudents();
+        refreshAllTables();
         localFlash("Student added locally.");
+      } catch (error) {
+        localFlash(error.message);
+      }
+    });
+  }
+
+  const departmentForm = document.getElementById("departmentForm");
+  if (departmentForm) {
+    departmentForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(departmentForm);
+      try {
+        store.addDepartment({ name: formData.get("name") });
+        departmentForm.reset();
+        refreshAllTables();
+        localFlash("Department added locally.");
       } catch (error) {
         localFlash(error.message);
       }
@@ -215,6 +270,7 @@ if (store) {
       const editBtn = event.target.closest("[data-student-edit]");
       const deleteBtn = event.target.closest("[data-student-delete]");
       const data = store.getAll();
+      const departmentNames = store.getDepartments().map((department) => department.name);
 
       if (editBtn) {
         const studentId = editBtn.getAttribute("data-student-edit");
@@ -228,7 +284,10 @@ if (store) {
         if (studentNo === null) return;
         const name = window.prompt("Name", student.name);
         if (name === null) return;
-        const department = window.prompt("Department", student.department);
+        const department = window.prompt(
+          `Department (${departmentNames.join(", ")})`,
+          student.department
+        );
         if (department === null) return;
         const level = window.prompt("Level", student.level);
         if (level === null) return;
@@ -251,6 +310,47 @@ if (store) {
           store.deleteStudent(studentId);
           refreshAllTables();
           localFlash("Student deleted.");
+        } catch (error) {
+          localFlash(error.message);
+        }
+      }
+    });
+  }
+
+  const departmentsBody = document.getElementById("departmentsBody");
+  if (departmentsBody) {
+    departmentsBody.addEventListener("click", (event) => {
+      const editBtn = event.target.closest("[data-department-edit]");
+      const deleteBtn = event.target.closest("[data-department-delete]");
+      const departments = store.getDepartments();
+
+      if (editBtn) {
+        const departmentId = editBtn.getAttribute("data-department-edit");
+        const target = departments.find((item) => item.id === departmentId);
+        if (!target) {
+          localFlash("Department not found.");
+          return;
+        }
+
+        const name = window.prompt("Department name", target.name);
+        if (name === null) return;
+
+        try {
+          store.updateDepartment(departmentId, { name });
+          refreshAllTables();
+          localFlash("Department updated.");
+        } catch (error) {
+          localFlash(error.message);
+        }
+      }
+
+      if (deleteBtn) {
+        const departmentId = deleteBtn.getAttribute("data-department-delete");
+        if (!window.confirm("Delete this department?")) return;
+        try {
+          store.deleteDepartment(departmentId);
+          refreshAllTables();
+          localFlash("Department deleted.");
         } catch (error) {
           localFlash(error.message);
         }

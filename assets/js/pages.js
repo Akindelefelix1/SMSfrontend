@@ -71,6 +71,36 @@ const registrationForm = document.getElementById("registrationForm");
 const selectedCoursesList = document.getElementById("selectedCourses");
 if (registrationForm) {
   const checklist = document.getElementById("courseChecklist");
+  const registrationDepartment = document.getElementById("registrationDepartment");
+  const registrationStudentNo = document.getElementById("registrationStudentNo");
+
+  const populateRegistrationStudents = () => {
+    if (!registrationDepartment || !registrationStudentNo || !store) return;
+    const selectedDepartment = registrationDepartment.value;
+    const students = selectedDepartment
+      ? store.getStudentsByDepartment(selectedDepartment)
+      : [];
+    registrationStudentNo.innerHTML =
+      '<option value="">Select student</option>' +
+      students
+        .map(
+          (student) =>
+            `<option value="${student.studentNo}">${student.studentNo} - ${student.name}</option>`
+        )
+        .join("");
+  };
+
+  if (registrationDepartment && store) {
+    const departments = store.getDepartments();
+    registrationDepartment.innerHTML =
+      '<option value="">Select department</option>' +
+      departments
+        .map((department) => `<option value="${department.name}">${department.name}</option>`)
+        .join("");
+    registrationDepartment.addEventListener("change", populateRegistrationStudents);
+    populateRegistrationStudents();
+  }
+
   if (checklist && store) {
     const localCourses = store.getCourseOptions();
     if (localCourses.length) {
