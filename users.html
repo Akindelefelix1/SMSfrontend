@@ -73,6 +73,7 @@
             <th>Role</th>
             <th>Status</th>
             <th>Email</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="usersBody"></tbody>
@@ -130,10 +131,22 @@
             <th>Department</th>
             <th>Level</th>
             <th>Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="studentsBody"></tbody>
       </table>
+    </section>
+
+    <section class="card">
+      <h2>Data Tools</h2>
+      <p class="muted">Export local test data, import a shared file, or reset to default seed.</p>
+      <div class="actions" style="margin-top: 12px;">
+        <button class="btn" id="exportDataBtn" type="button">Export JSON</button>
+        <label class="btn btn-outline" for="importDataFile">Import JSON</label>
+        <input id="importDataFile" type="file" accept="application/json" style="display: none;" />
+        <button class="btn btn-outline" id="resetDataBtn" type="button">Reset Local Data</button>
+      </div>
     </section>
   </main>
 

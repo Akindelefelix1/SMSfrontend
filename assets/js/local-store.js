@@ -155,6 +155,51 @@
     return data.users;
   };
 
+  const updateUser = (id, payload) => {
+    const data = read();
+    const user = data.users.find((item) => item.id === id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const name = String(payload.name || user.name).trim();
+    const role = String(payload.role || user.role).trim();
+    const status = String(payload.status || user.status).trim();
+    const email = String(payload.email || user.email || "").trim();
+
+    if (!name) {
+      throw new Error("User name is required");
+    }
+
+    const duplicate = data.users.some(
+      (item) =>
+        item.id !== id &&
+        item.name.toLowerCase() === name.toLowerCase() &&
+        item.role.toLowerCase() === role.toLowerCase()
+    );
+    if (duplicate) {
+      throw new Error("Another user with same name and role already exists");
+    }
+
+    user.name = name;
+    user.role = role;
+    user.status = status;
+    user.email = email;
+    write(data);
+    return data.users;
+  };
+
+  const deleteUser = (id) => {
+    const data = read();
+    const before = data.users.length;
+    data.users = data.users.filter((item) => item.id !== id);
+    if (data.users.length === before) {
+      throw new Error("User not found");
+    }
+    write(data);
+    return data.users;
+  };
+
   const addStudent = (payload) => {
     const data = read();
     const studentNo = String(payload.studentNo || "").trim();
@@ -177,6 +222,53 @@
     return data.students;
   };
 
+  const updateStudent = (id, payload) => {
+    const data = read();
+    const student = data.students.find((item) => item.id === id);
+    if (!student) {
+      throw new Error("Student not found");
+    }
+
+    const studentNo = String(payload.studentNo || student.studentNo).trim();
+    const name = String(payload.name || student.name).trim();
+    const department = String(payload.department || student.department || "General").trim();
+    const level = String(payload.level || student.level || "100").trim();
+    const status = String(payload.status || student.status || "Active").trim();
+
+    if (!studentNo || !name) {
+      throw new Error("Student number and name are required");
+    }
+
+    const duplicate = data.students.some(
+      (item) => item.id !== id && item.studentNo.toLowerCase() === studentNo.toLowerCase()
+    );
+    if (duplicate) {
+      throw new Error("Another student already uses this number");
+    }
+
+    student.studentNo = studentNo;
+    student.name = name;
+    student.department = department;
+    student.level = level;
+    student.status = status;
+    write(data);
+    return data.students;
+  };
+
+  const deleteStudent = (id) => {
+    const data = read();
+    const target = data.students.find((item) => item.id === id);
+    if (!target) {
+      throw new Error("Student not found");
+    }
+
+    data.students = data.students.filter((item) => item.id !== id);
+    data.registrations = data.registrations.filter((item) => item.studentNo !== target.studentNo);
+    data.results = data.results.filter((item) => item.studentNo !== target.studentNo);
+    write(data);
+    return data.students;
+  };
+
   const addCourse = (payload) => {
     const data = read();
     const code = String(payload.code || "").trim();
@@ -194,6 +286,64 @@
     }
 
     data.courses.push({ id: uid("c"), code, title, units, semester });
+    write(data);
+    return data.courses;
+  };
+
+  const updateCourse = (id, payload) => {
+    const data = read();
+    const course = data.courses.find((item) => item.id === id);
+    if (!course) {
+      throw new Error("Course not found");
+    }
+
+    const code = String(payload.code || course.code).trim();
+    const title = String(payload.title || course.title).trim();
+    const units = Number(payload.units || course.units || 0);
+    const semester = String(payload.semester || course.semester || "First Semester").trim();
+
+    if (!code || !title || !units) {
+      throw new Error("Course code, title, and units are required");
+    }
+
+    const duplicate = data.courses.some(
+      (item) => item.id !== id && item.code.toLowerCase() === code.toLowerCase()
+    );
+    if (duplicate) {
+      throw new Error("Another course already uses this code");
+    }
+
+    const previousLabel = `${course.code} - ${course.title}`;
+    const newLabel = `${code} - ${title}`;
+
+    course.code = code;
+    course.title = title;
+    course.units = units;
+    course.semester = semester;
+
+    data.registrations = data.registrations.map((item) => ({
+      ...item,
+      courses: item.courses.map((label) => (label === previousLabel ? newLabel : label))
+    }));
+
+    write(data);
+    return data.courses;
+  };
+
+  const deleteCourse = (id) => {
+    const data = read();
+    const target = data.courses.find((item) => item.id === id);
+    if (!target) {
+      throw new Error("Course not found");
+    }
+
+    const label = `${target.code} - ${target.title}`;
+    data.courses = data.courses.filter((item) => item.id !== id);
+    data.registrations = data.registrations.map((item) => ({
+      ...item,
+      courses: item.courses.filter((courseLabel) => courseLabel !== label)
+    }));
+    data.results = data.results.filter((item) => item.course !== target.code);
     write(data);
     return data.courses;
   };
@@ -339,12 +489,49 @@
 
   const getAll = () => read();
 
+  const exportData = () => JSON.stringify(read(), null, 2);
+
+  const importData = (rawText) => {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (_err) {
+      throw new Error("Invalid JSON file");
+    }
+
+    const normalized = {
+      users: Array.isArray(parsed.users) ? parsed.users : [],
+      students: Array.isArray(parsed.students) ? parsed.students : [],
+      courses: Array.isArray(parsed.courses) ? parsed.courses : [],
+      registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
+      results: Array.isArray(parsed.results) ? parsed.results : []
+    };
+
+    write(normalized);
+    return normalized;
+  };
+
+  const resetData = () => {
+    const fresh = clone(seed);
+    write(fresh);
+    return fresh;
+  };
+
   window.SMISStore = {
     ensure,
     getAll,
+    exportData,
+    importData,
+    resetData,
     addUser,
+    updateUser,
+    deleteUser,
     addStudent,
+    updateStudent,
+    deleteStudent,
     addCourse,
+    updateCourse,
+    deleteCourse,
     addRegistration,
     getDashboardData,
     queryResults,

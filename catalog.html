@@ -67,10 +67,21 @@
             <th>Title</th>
             <th>Units</th>
             <th>Semester</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="coursesBody"></tbody>
       </table>
+    </section>
+
+    <section class="card">
+      <h2>Data Tools</h2>
+      <div class="actions">
+        <button class="btn" id="exportDataBtn" type="button">Export JSON</button>
+        <label class="btn btn-outline" for="importDataFile">Import JSON</label>
+        <input id="importDataFile" type="file" accept="application/json" style="display: none;" />
+        <button class="btn btn-outline" id="resetDataBtn" type="button">Reset Local Data</button>
+      </div>
     </section>
   </main>
 
