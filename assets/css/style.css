@@ -59,6 +59,17 @@ body {
   padding-bottom: 4px;
 }
 
+.mode-badge {
+  background: #14532d;
+  color: #dcfce7;
+  border: 1px solid #22c55e;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
 .topbar .container {
   display: flex;
   justify-content: space-between;
@@ -286,6 +297,10 @@ body {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
+  }
+
+  .mode-badge {
+    align-self: flex-start;
   }
 
   .hero {

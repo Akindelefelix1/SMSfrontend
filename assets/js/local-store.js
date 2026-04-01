@@ -94,6 +94,18 @@
     }
   };
 
+  const mountModeBadge = () => {
+    if (document.getElementById("smsDataModeBadge")) return;
+    const topbarContainer = document.querySelector(".topbar .container");
+    if (!topbarContainer) return;
+
+    const badge = document.createElement("span");
+    badge.id = "smsDataModeBadge";
+    badge.className = "mode-badge";
+    badge.textContent = "Data Mode: Local Offline";
+    topbarContainer.appendChild(badge);
+  };
+
   const write = (data) => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     return data;
@@ -131,6 +143,8 @@
   };
 
   const ensure = () => read();
+
+  mountModeBadge();
 
   const addUser = (payload) => {
     const data = read();
