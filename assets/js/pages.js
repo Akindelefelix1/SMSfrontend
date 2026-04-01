@@ -392,6 +392,29 @@ if (dashboardStats) {
   let recentPage = 1;
   const recentLimit = 3;
   let usingLocalData = false;
+  const taskForm = document.getElementById("taskForm");
+  const taskInput = document.getElementById("taskInput");
+
+  const renderTaskItems = (tasks) => {
+    const taskList = document.getElementById("taskList");
+    if (!taskList) return;
+
+    const normalized = (Array.isArray(tasks) ? tasks : [])
+      .map((item) => {
+        if (typeof item === "string") {
+          return { id: "", text: item };
+        }
+        return {
+          id: String(item.id || ""),
+          text: String(item.text || "").trim(),
+        };
+      })
+      .filter((item) => item.text);
+
+    taskList.innerHTML = normalized.length
+      ? normalized.map((item) => `<li>${item.text}</li>`).join("")
+      : "<li>No tasks yet.</li>";
+  };
 
   const renderDashboard = (data) => {
     document.getElementById("statStudents").textContent = data.activeStudents;
@@ -400,16 +423,13 @@ if (dashboardStats) {
     document.getElementById("statHolds").textContent = data.registrationHolds;
 
     const recentList = document.getElementById("recentRegistrations");
-    const taskList = document.getElementById("taskList");
     const recentPageInfo = document.getElementById("recentPageInfo");
     if (recentList) {
       recentList.innerHTML = data.recentRegistrations.length
         ? data.recentRegistrations.map((item) => `<li>${item}</li>`).join("")
         : "<li>No recent registrations.</li>";
     }
-    if (taskList) {
-      taskList.innerHTML = data.tasks.map((item) => `<li>${item}</li>`).join("");
-    }
+    renderTaskItems(data.tasks);
     if (recentPageInfo) {
       const meta = data.recentMeta || {
         page: recentPage,
@@ -461,6 +481,32 @@ if (dashboardStats) {
   };
 
   fetchDashboard();
+
+  if (taskForm && taskInput) {
+    taskForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!store) {
+        flash("Task storage unavailable.");
+        return;
+      }
+
+      try {
+        store.addTask({ text: taskInput.value });
+        taskForm.reset();
+        const localData = store.getDashboardData({
+          page: recentPage,
+          limit: recentLimit,
+          studentNo: document.getElementById("recentStudentNo")?.value.trim() || "",
+          courseCode: document.getElementById("recentCourseCode")?.value.trim() || "",
+        });
+        renderDashboard(localData);
+        usingLocalData = true;
+        flash("Task added.");
+      } catch (error) {
+        flash(error.message);
+      }
+    });
+  }
 
   const recentPrev = document.getElementById("recentPrev");
   const recentNext = document.getElementById("recentNext");

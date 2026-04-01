@@ -23,6 +23,11 @@
       { id: "c3", code: "MTH 201", title: "Linear Algebra", units: 3, semester: "First Semester" },
       { id: "c4", code: "GST 201", title: "Entrepreneurship", units: 2, semester: "First Semester" }
     ],
+    tasks: [
+      { id: "t1", text: "Approve course add/drop requests" },
+      { id: "t2", text: "Publish semester results" },
+      { id: "t3", text: "Update academic year settings" }
+    ],
     registrations: [
       {
         id: "r1",
@@ -104,11 +109,33 @@
         }
       });
 
+      const rawTasks = Array.isArray(parsed.tasks) ? parsed.tasks : seed.tasks;
+      const normalizedTasks = rawTasks
+        .map((item, index) => {
+          if (typeof item === "string") {
+            const text = item.trim();
+            if (!text) return null;
+            return {
+              id: `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+              text,
+            };
+          }
+
+          const text = String(item.text || "").trim();
+          if (!text) return null;
+          return {
+            id: String(item.id || `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`),
+            text,
+          };
+        })
+        .filter(Boolean);
+
       return {
         departments: mergedDepartments,
         users: Array.isArray(parsed.users) ? parsed.users : [],
         students,
         courses: Array.isArray(parsed.courses) ? parsed.courses : [],
+        tasks: normalizedTasks,
         registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
         results: Array.isArray(parsed.results) ? parsed.results : []
       };
@@ -557,6 +584,22 @@
     return data.results;
   };
 
+  const addTask = (payload) => {
+    const data = read();
+    const text = String(payload.text || "").trim();
+    if (!text) {
+      throw new Error("Task text is required");
+    }
+
+    if (!Array.isArray(data.tasks)) {
+      data.tasks = [];
+    }
+
+    data.tasks.unshift({ id: uid("t"), text });
+    write(data);
+    return data.tasks;
+  };
+
   const getDashboardData = (payload = {}) => {
     const data = read();
     const page = Number(payload.page || 1);
@@ -591,11 +634,7 @@
       registrationHolds,
       recentRegistrations: list,
       recentMeta: { page: safePage, pages },
-      tasks: [
-        "Approve course add/drop requests",
-        "Publish semester results",
-        "Update academic year settings"
-      ]
+      tasks: Array.isArray(data.tasks) ? data.tasks : []
     };
   };
 
@@ -742,11 +781,33 @@
       }
     });
 
+    const rawTasks = Array.isArray(parsed.tasks) ? parsed.tasks : seed.tasks;
+    const normalizedTasks = rawTasks
+      .map((item, index) => {
+        if (typeof item === "string") {
+          const text = item.trim();
+          if (!text) return null;
+          return {
+            id: `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+            text,
+          };
+        }
+
+        const text = String(item.text || "").trim();
+        if (!text) return null;
+        return {
+          id: String(item.id || `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`),
+          text,
+        };
+      })
+      .filter(Boolean);
+
     const normalized = {
       departments: mergedDepartments,
       users: Array.isArray(parsed.users) ? parsed.users : [],
       students,
       courses: Array.isArray(parsed.courses) ? parsed.courses : [],
+      tasks: normalizedTasks,
       registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
       results: Array.isArray(parsed.results) ? parsed.results : []
     };
@@ -782,6 +843,7 @@
     deleteCourse,
     addRegistration,
     addResult,
+    addTask,
     getDashboardData,
     queryResults,
     getCourseOptions,
