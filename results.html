@@ -28,6 +28,59 @@
       <a class="btn btn-outline" href="reports.html">Download PDF</a>
     </section>
 
+    <form id="reportEntryForm">
+      <section class="card">
+        <h2>Input Student Report</h2>
+        <div class="form-grid">
+          <label>
+            <span>Student No</span>
+            <input type="text" name="studentNo" placeholder="20/1234" required />
+          </label>
+          <label>
+            <span>Academic Year</span>
+            <select name="academicYear" required>
+              <option>2025/2026</option>
+              <option>2026/2027</option>
+            </select>
+          </label>
+          <label>
+            <span>Semester</span>
+            <select name="semester" required>
+              <option>First Semester</option>
+              <option>Second Semester</option>
+            </select>
+          </label>
+          <label>
+            <span>Course Code</span>
+            <input type="text" name="course" placeholder="CSC 205" required />
+          </label>
+          <label>
+            <span>Unit</span>
+            <input type="number" name="unit" min="1" max="6" required />
+          </label>
+          <label>
+            <span>CA Score</span>
+            <input type="number" name="ca" min="0" max="40" required />
+          </label>
+          <label>
+            <span>Exam Score</span>
+            <input type="number" name="exam" min="0" max="70" required />
+          </label>
+          <label>
+            <span>Total</span>
+            <input type="number" name="total" min="0" max="100" placeholder="Auto = CA + Exam" />
+          </label>
+          <label>
+            <span>Grade (Optional)</span>
+            <input type="text" name="grade" maxlength="1" placeholder="Auto" />
+          </label>
+        </div>
+        <div class="actions" style="margin-top: 16px;">
+          <button class="btn" type="submit">Save Report Row</button>
+        </div>
+      </section>
+    </form>
+
     <form id="resultsForm">
       <section class="card">
         <div class="form-grid">

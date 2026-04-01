@@ -120,6 +120,15 @@
     return 0;
   };
 
+  const scoreToGrade = (total) => {
+    if (total >= 70) return "A";
+    if (total >= 60) return "B";
+    if (total >= 50) return "C";
+    if (total >= 45) return "D";
+    if (total >= 40) return "E";
+    return "F";
+  };
+
   const computeGpa = (rows) => {
     if (!rows.length) return "0.00";
     const totals = rows.reduce(
@@ -388,6 +397,58 @@
     return data.registrations;
   };
 
+  const addResult = (payload) => {
+    const data = read();
+    const studentNo = String(payload.studentNo || "").trim();
+    const academicYear = String(payload.academicYear || "").trim();
+    const semester = String(payload.semester || "").trim();
+    const course = String(payload.course || "").trim().toUpperCase();
+    const unit = Number(payload.unit || 0);
+    const ca = Number(payload.ca || 0);
+    const exam = Number(payload.exam || 0);
+    const total = Number(
+      payload.total !== undefined && payload.total !== "" ? payload.total : ca + exam
+    );
+    const grade = String(payload.grade || scoreToGrade(total)).trim().toUpperCase();
+
+    if (!studentNo || !academicYear || !semester || !course) {
+      throw new Error("Student report fields are incomplete");
+    }
+    if (!unit || Number.isNaN(unit)) {
+      throw new Error("Course unit is required");
+    }
+    if (Number.isNaN(ca) || Number.isNaN(exam) || Number.isNaN(total)) {
+      throw new Error("Scores must be valid numbers");
+    }
+
+    const duplicate = data.results.some(
+      (item) =>
+        item.studentNo === studentNo &&
+        item.academicYear === academicYear &&
+        item.semester === semester &&
+        item.course.toUpperCase() === course
+    );
+    if (duplicate) {
+      throw new Error("Result already exists for this student/course/semester");
+    }
+
+    data.results.push({
+      id: uid("res"),
+      studentNo,
+      academicYear,
+      semester,
+      course,
+      unit,
+      ca,
+      exam,
+      total,
+      grade,
+    });
+
+    write(data);
+    return data.results;
+  };
+
   const getDashboardData = (payload = {}) => {
     const data = read();
     const page = Number(payload.page || 1);
@@ -547,6 +608,7 @@
     updateCourse,
     deleteCourse,
     addRegistration,
+    addResult,
     getDashboardData,
     queryResults,
     getCourseOptions,

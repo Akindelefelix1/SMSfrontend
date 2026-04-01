@@ -122,6 +122,7 @@ if (registrationForm) {
 }
 
 const resultsForm = document.getElementById("resultsForm");
+const reportEntryForm = document.getElementById("reportEntryForm");
 const resultsBody = document.getElementById("resultsBody");
 const gpaValue = document.getElementById("gpaValue");
 const cgpaValue = document.getElementById("cgpaValue");
@@ -174,6 +175,52 @@ const fetchResults = async (payload) => {
     }
   }
 };
+
+if (reportEntryForm) {
+  reportEntryForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(reportEntryForm);
+
+    const payload = {
+      studentNo: formData.get("studentNo"),
+      academicYear: formData.get("academicYear"),
+      semester: formData.get("semester"),
+      course: formData.get("course"),
+      unit: formData.get("unit"),
+      ca: formData.get("ca"),
+      exam: formData.get("exam"),
+      total: formData.get("total") || undefined,
+      grade: formData.get("grade") || undefined,
+    };
+
+    try {
+      await postJsonWithFallback(
+        "/api/results-create.php",
+        payload,
+        (localPayload) => store.addResult(localPayload),
+        "Student report saved locally."
+      );
+
+      flash("Student report saved locally.");
+      reportEntryForm.reset();
+
+      resultsPage = 1;
+      lastResultsPayload = {
+        studentNo: payload.studentNo,
+        academicYear: payload.academicYear,
+        semester: payload.semester,
+        sort: "course_code",
+        order: "asc",
+        page: resultsPage,
+        limit: resultsLimit,
+      };
+
+      await fetchResults(lastResultsPayload);
+    } catch (err) {
+      flash(err.message);
+    }
+  });
+}
 
 if (resultsForm) {
   resultsForm.addEventListener("submit", async (event) => {
