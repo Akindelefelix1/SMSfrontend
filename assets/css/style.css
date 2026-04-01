@@ -121,6 +121,8 @@ body {
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
+  display: inline-block;
+  text-decoration: none;
 }
 
 .btn:hover {

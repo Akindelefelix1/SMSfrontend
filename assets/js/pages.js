@@ -1,6 +1,10 @@
-﻿const API_BASE =
+const API_BASE =
   window.__API_BASE__ ||
   (window.location.hostname === "localhost" ? "http://localhost:8000" : "");
+const store = window.SMISStore || null;
+if (store) {
+  store.ensure();
+}
 
 const flash = (message) => {
   const toast = document.createElement("div");
@@ -27,6 +31,21 @@ const postJson = async (path, payload) => {
   return data;
 };
 
+const postJsonWithFallback = async (path, payload, fallbackFn, fallbackMessage) => {
+  try {
+    return await postJson(path, payload);
+  } catch (err) {
+    if (!store || !fallbackFn) {
+      throw err;
+    }
+    const data = fallbackFn(payload);
+    return {
+      message: fallbackMessage,
+      data,
+    };
+  }
+};
+
 const loginForm = document.getElementById("loginForm");
 if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
@@ -39,7 +58,11 @@ if (loginForm) {
       });
       flash(result.message);
     } catch (err) {
-      flash(err.message);
+      if (store) {
+        flash("Backend unavailable. Login allowed in local testing mode.");
+      } else {
+        flash(err.message);
+      }
     }
   });
 }
@@ -48,6 +71,18 @@ const registrationForm = document.getElementById("registrationForm");
 const selectedCoursesList = document.getElementById("selectedCourses");
 if (registrationForm) {
   const checklist = document.getElementById("courseChecklist");
+  if (checklist && store) {
+    const localCourses = store.getCourseOptions();
+    if (localCourses.length) {
+      checklist.innerHTML = localCourses
+        .map(
+          (course) =>
+            `<label><input type="checkbox" data-course="${course.label}" /> ${course.label}</label>`
+        )
+        .join("");
+    }
+  }
+
   if (checklist && selectedCoursesList) {
     checklist.addEventListener("change", () => {
       const selected = Array.from(
@@ -65,14 +100,20 @@ if (registrationForm) {
     const courses = Array.from(
       registrationForm.querySelectorAll("input[type='checkbox']:checked")
     ).map((input) => input.dataset.course);
+
     try {
-      const result = await postJson("/api/registration.php", {
-        studentNo: formData.get("studentNo"),
-        regNo: formData.get("regNo"),
-        semester: formData.get("semester"),
-        academicYear: formData.get("academicYear"),
-        courses,
-      });
+      const result = await postJsonWithFallback(
+        "/api/registration.php",
+        {
+          studentNo: formData.get("studentNo"),
+          regNo: formData.get("regNo"),
+          semester: formData.get("semester"),
+          academicYear: formData.get("academicYear"),
+          courses,
+        },
+        (payload) => store.addRegistration(payload),
+        "Registration saved locally (offline mode)."
+      );
       flash(result.message);
     } catch (err) {
       flash(err.message);
@@ -108,7 +149,7 @@ const renderResults = (data) => {
           </tr>`
         )
         .join("")
-    : "<tr><td colspan=\"6\">No results found.</td></tr>";
+    : '<tr><td colspan="6">No results found.</td></tr>';
 
   if (gpaValue) gpaValue.textContent = data.gpa;
   if (cgpaValue) cgpaValue.textContent = data.cgpa;
@@ -124,7 +165,13 @@ const fetchResults = async (payload) => {
     renderResults(result.data);
     flash(result.message);
   } catch (err) {
-    flash(err.message);
+    if (store) {
+      const localData = store.queryResults(payload);
+      renderResults(localData);
+      flash("Showing local offline results.");
+    } else {
+      flash(err.message);
+    }
   }
 };
 
@@ -171,8 +218,35 @@ const dashboardStats = document.getElementById("statStudents");
 if (dashboardStats) {
   let recentPage = 1;
   const recentLimit = 3;
+  let usingLocalData = false;
 
-  const fetchDashboard = () => {
+  const renderDashboard = (data) => {
+    document.getElementById("statStudents").textContent = data.activeStudents;
+    document.getElementById("statDepartments").textContent = data.departments;
+    document.getElementById("statResults").textContent = data.pendingResults;
+    document.getElementById("statHolds").textContent = data.registrationHolds;
+
+    const recentList = document.getElementById("recentRegistrations");
+    const taskList = document.getElementById("taskList");
+    const recentPageInfo = document.getElementById("recentPageInfo");
+    if (recentList) {
+      recentList.innerHTML = data.recentRegistrations.length
+        ? data.recentRegistrations.map((item) => `<li>${item}</li>`).join("")
+        : "<li>No recent registrations.</li>";
+    }
+    if (taskList) {
+      taskList.innerHTML = data.tasks.map((item) => `<li>${item}</li>`).join("");
+    }
+    if (recentPageInfo) {
+      const meta = data.recentMeta || {
+        page: recentPage,
+        pages: 1,
+      };
+      recentPageInfo.textContent = `Page ${meta.page} of ${meta.pages}`;
+    }
+  };
+
+  const fetchDashboard = async () => {
     const recentStudentNo = document.getElementById("recentStudentNo");
     const recentCourseCode = document.getElementById("recentCourseCode");
     const params = new URLSearchParams({
@@ -186,45 +260,31 @@ if (dashboardStats) {
       params.set("recent_course_code", recentCourseCode.value.trim());
     }
 
-    fetch(`${API_BASE}/api/dashboard.php?${params.toString()}`)
-      .then((res) => res.json())
-      .then((result) => {
-        if (result.status !== "ok") return;
-        document.getElementById("statStudents").textContent =
-          result.data.activeStudents;
-        document.getElementById("statDepartments").textContent =
-          result.data.departments;
-        document.getElementById("statResults").textContent =
-          result.data.pendingResults;
-        document.getElementById("statHolds").textContent =
-          result.data.registrationHolds;
-
-        const recentList = document.getElementById("recentRegistrations");
-        const taskList = document.getElementById("taskList");
-        const recentPageInfo = document.getElementById("recentPageInfo");
-        if (recentList) {
-          recentList.innerHTML = result.data.recentRegistrations.length
-            ? result.data.recentRegistrations
-                .map((item) => `<li>${item}</li>`)
-                .join("")
-            : "<li>No recent registrations.</li>";
-        }
-        if (taskList) {
-          taskList.innerHTML = result.data.tasks
-            .map((item) => `<li>${item}</li>`)
-            .join("");
-        }
-        if (recentPageInfo) {
-          const meta = result.data.recentMeta || {
-            page: recentPage,
-            pages: 1,
-          };
-          recentPageInfo.textContent = `Page ${meta.page} of ${meta.pages}`;
-        }
-      })
-      .catch(() => {
+    try {
+      const res = await fetch(`${API_BASE}/api/dashboard.php?${params.toString()}`);
+      const result = await res.json();
+      if (result.status !== "ok") {
+        throw new Error("Invalid dashboard response");
+      }
+      renderDashboard(result.data);
+    } catch (_err) {
+      if (!store) {
         flash("Dashboard data unavailable (backend not running).");
+        return;
+      }
+
+      const localData = store.getDashboardData({
+        page: recentPage,
+        limit: recentLimit,
+        studentNo: recentStudentNo ? recentStudentNo.value.trim() : "",
+        courseCode: recentCourseCode ? recentCourseCode.value.trim() : "",
       });
+      renderDashboard(localData);
+      if (!usingLocalData) {
+        usingLocalData = true;
+        flash("Dashboard switched to local offline data.");
+      }
+    }
   };
 
   fetchDashboard();

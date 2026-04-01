@@ -23,9 +23,45 @@
     <section class="hero">
       <div>
         <h1>User Management</h1>
-        <p>Review users and roles for admin, lecturer, and student accounts.</p>
+        <p>Add users and students directly in local browser storage for testing.</p>
       </div>
       <a class="btn btn-outline" href="dashboard.html">Back to Dashboard</a>
+    </section>
+
+    <section class="card">
+      <h2>Add User</h2>
+      <form id="userForm">
+        <div class="form-grid">
+          <label>
+            <span>Full Name</span>
+            <input type="text" name="name" placeholder="e.g. Tunde Okafor" required />
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" placeholder="name@sms.local" />
+          </label>
+          <label>
+            <span>Role</span>
+            <select name="role" required>
+              <option>Admin</option>
+              <option>Lecturer</option>
+              <option>Student</option>
+              <option>Support</option>
+            </select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select name="status" required>
+              <option>Active</option>
+              <option>Pending</option>
+              <option>Suspended</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions" style="margin-top: 16px;">
+          <button class="btn" type="submit">Add User</button>
+        </div>
+      </form>
     </section>
 
     <section class="card">
@@ -36,27 +72,72 @@
             <th>Name</th>
             <th>Role</th>
             <th>Status</th>
+            <th>Email</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>Add Student</h2>
+      <form id="studentForm">
+        <div class="form-grid">
+          <label>
+            <span>Student No</span>
+            <input type="text" name="studentNo" placeholder="20/1234" required />
+          </label>
+          <label>
+            <span>Full Name</span>
+            <input type="text" name="name" placeholder="e.g. Ifeanyi Musa" required />
+          </label>
+          <label>
+            <span>Department</span>
+            <input type="text" name="department" placeholder="Computer Science" required />
+          </label>
+          <label>
+            <span>Level</span>
+            <select name="level" required>
+              <option>100</option>
+              <option>200</option>
+              <option>300</option>
+              <option>400</option>
+              <option>500</option>
+            </select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select name="status" required>
+              <option>Active</option>
+              <option>Pending</option>
+              <option>On Hold</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions" style="margin-top: 16px;">
+          <button class="btn" type="submit">Add Student</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Students</h2>
+      <table class="table">
+        <thead>
           <tr>
-            <td>Ada Nwosu</td>
-            <td>Admin</td>
-            <td>Active</td>
+            <th>Student No</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Level</th>
+            <th>Status</th>
           </tr>
-          <tr>
-            <td>Femi Ajayi</td>
-            <td>Lecturer</td>
-            <td>Active</td>
-          </tr>
-          <tr>
-            <td>Chioma Eze</td>
-            <td>Student</td>
-            <td>Pending</td>
-          </tr>
-        </tbody>
+        </thead>
+        <tbody id="studentsBody"></tbody>
       </table>
     </section>
   </main>
+
+  <script src="assets/js/local-store.js"></script>
+  <script src="assets/js/manage-data.js"></script>
 </body>
 </html>

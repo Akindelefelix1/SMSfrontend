@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>SMS - Course Catalog</title>
+  <title>SMS - Students</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body class="page">
@@ -22,54 +22,66 @@
   <main class="container">
     <section class="hero">
       <div>
-        <h1>Course Catalog</h1>
-        <p>Add and review courses stored locally in tester browser storage.</p>
+        <h1>Students</h1>
+        <p>Add students and keep records locally until backend integration is ready.</p>
       </div>
       <a class="btn btn-outline" href="dashboard.html">Back to Dashboard</a>
     </section>
 
     <section class="card">
-      <h2>Add Course</h2>
-      <form id="courseForm">
+      <h2>Add Student</h2>
+      <form id="studentForm">
         <div class="form-grid">
           <label>
-            <span>Course Code</span>
-            <input type="text" name="code" placeholder="CSC 205" required />
+            <span>Student No</span>
+            <input type="text" name="studentNo" placeholder="20/1234" required />
           </label>
           <label>
-            <span>Course Title</span>
-            <input type="text" name="title" placeholder="Database Systems" required />
+            <span>Full Name</span>
+            <input type="text" name="name" placeholder="e.g. Mary Okon" required />
           </label>
           <label>
-            <span>Units</span>
-            <input type="number" name="units" min="1" max="6" required />
+            <span>Department</span>
+            <input type="text" name="department" placeholder="Computer Science" required />
           </label>
           <label>
-            <span>Semester</span>
-            <select name="semester" required>
-              <option>First Semester</option>
-              <option>Second Semester</option>
+            <span>Level</span>
+            <select name="level" required>
+              <option>100</option>
+              <option>200</option>
+              <option>300</option>
+              <option>400</option>
+              <option>500</option>
+            </select>
+          </label>
+          <label>
+            <span>Status</span>
+            <select name="status" required>
+              <option>Active</option>
+              <option>Pending</option>
+              <option>On Hold</option>
             </select>
           </label>
         </div>
         <div class="actions" style="margin-top: 16px;">
-          <button class="btn" type="submit">Add Course</button>
+          <button class="btn" type="submit">Add Student</button>
         </div>
       </form>
     </section>
 
     <section class="card">
-      <h2>Current Courses</h2>
+      <h2>Students List</h2>
       <table class="table">
         <thead>
           <tr>
-            <th>Code</th>
-            <th>Title</th>
-            <th>Units</th>
-            <th>Semester</th>
+            <th>Student No</th>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Level</th>
+            <th>Status</th>
           </tr>
         </thead>
-        <tbody id="coursesBody"></tbody>
+        <tbody id="studentsBody"></tbody>
       </table>
     </section>
   </main>

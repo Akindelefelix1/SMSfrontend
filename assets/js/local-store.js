@@ -1,0 +1,354 @@
+(() => {
+  const STORAGE_KEY = "smis_local_data_v1";
+
+  const seed = {
+    users: [
+      { id: "u1", name: "Ada Nwosu", role: "Admin", status: "Active", email: "ada@sms.local" },
+      { id: "u2", name: "Femi Ajayi", role: "Lecturer", status: "Active", email: "femi@sms.local" },
+      { id: "u3", name: "Chioma Eze", role: "Student", status: "Pending", email: "chioma@sms.local" }
+    ],
+    students: [
+      { id: "s1", studentNo: "20/1234", name: "Chioma Eze", department: "Computer Science", level: "200", status: "Active" },
+      { id: "s2", studentNo: "20/4521", name: "Uche Danladi", department: "Mathematics", level: "200", status: "Active" },
+      { id: "s3", studentNo: "21/9832", name: "Amina Bello", department: "Biology", level: "100", status: "Pending" }
+    ],
+    courses: [
+      { id: "c1", code: "CSC 201", title: "Data Structures", units: 3, semester: "First Semester" },
+      { id: "c2", code: "CSC 203", title: "Web Development", units: 2, semester: "First Semester" },
+      { id: "c3", code: "MTH 201", title: "Linear Algebra", units: 3, semester: "First Semester" },
+      { id: "c4", code: "GST 201", title: "Entrepreneurship", units: 2, semester: "First Semester" }
+    ],
+    registrations: [
+      {
+        id: "r1",
+        studentNo: "20/1234",
+        regNo: "REG/CS/2026/014",
+        semester: "First Semester",
+        academicYear: "2025/2026",
+        courses: ["CSC 201 - Data Structures", "GST 201 - Entrepreneurship"],
+        createdAt: "2026-04-01T09:00:00.000Z"
+      }
+    ],
+    results: [
+      {
+        id: "res1",
+        studentNo: "20/1234",
+        academicYear: "2025/2026",
+        semester: "First Semester",
+        course: "CSC 201",
+        unit: 3,
+        ca: 25,
+        exam: 62,
+        total: 87,
+        grade: "A"
+      },
+      {
+        id: "res2",
+        studentNo: "20/1234",
+        academicYear: "2025/2026",
+        semester: "First Semester",
+        course: "CSC 203",
+        unit: 2,
+        ca: 22,
+        exam: 58,
+        total: 80,
+        grade: "A"
+      },
+      {
+        id: "res3",
+        studentNo: "20/1234",
+        academicYear: "2025/2026",
+        semester: "First Semester",
+        course: "MTH 201",
+        unit: 3,
+        ca: 18,
+        exam: 52,
+        total: 70,
+        grade: "B"
+      }
+    ]
+  };
+
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+  const uid = (prefix) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+
+  const read = () => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+      return clone(seed);
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      return {
+        users: Array.isArray(parsed.users) ? parsed.users : [],
+        students: Array.isArray(parsed.students) ? parsed.students : [],
+        courses: Array.isArray(parsed.courses) ? parsed.courses : [],
+        registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
+        results: Array.isArray(parsed.results) ? parsed.results : []
+      };
+    } catch (error) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+      return clone(seed);
+    }
+  };
+
+  const write = (data) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return data;
+  };
+
+  const gradePoint = (grade) => {
+    if (grade === "A") return 5;
+    if (grade === "B") return 4;
+    if (grade === "C") return 3;
+    if (grade === "D") return 2;
+    if (grade === "E") return 1;
+    return 0;
+  };
+
+  const computeGpa = (rows) => {
+    if (!rows.length) return "0.00";
+    const totals = rows.reduce(
+      (acc, row) => {
+        const units = Number(row.unit) || 0;
+        return {
+          quality: acc.quality + gradePoint(row.grade) * units,
+          units: acc.units + units
+        };
+      },
+      { quality: 0, units: 0 }
+    );
+
+    if (!totals.units) return "0.00";
+    return (totals.quality / totals.units).toFixed(2);
+  };
+
+  const withStudentName = (studentNo, students) => {
+    const student = students.find((item) => item.studentNo === studentNo);
+    return student ? student.name : "Unknown Student";
+  };
+
+  const ensure = () => read();
+
+  const addUser = (payload) => {
+    const data = read();
+    const name = String(payload.name || "").trim();
+    const role = String(payload.role || "User").trim();
+    const status = String(payload.status || "Active").trim();
+    const email = String(payload.email || "").trim();
+
+    if (!name) {
+      throw new Error("User name is required");
+    }
+
+    const duplicate = data.users.some(
+      (user) => user.name.toLowerCase() === name.toLowerCase() && user.role.toLowerCase() === role.toLowerCase()
+    );
+    if (duplicate) {
+      throw new Error("User already exists");
+    }
+
+    data.users.push({ id: uid("u"), name, role, status, email });
+    write(data);
+    return data.users;
+  };
+
+  const addStudent = (payload) => {
+    const data = read();
+    const studentNo = String(payload.studentNo || "").trim();
+    const name = String(payload.name || "").trim();
+    const department = String(payload.department || "General").trim();
+    const level = String(payload.level || "100").trim();
+    const status = String(payload.status || "Active").trim();
+
+    if (!studentNo || !name) {
+      throw new Error("Student number and name are required");
+    }
+
+    const duplicate = data.students.some((student) => student.studentNo.toLowerCase() === studentNo.toLowerCase());
+    if (duplicate) {
+      throw new Error("Student number already exists");
+    }
+
+    data.students.push({ id: uid("s"), studentNo, name, department, level, status });
+    write(data);
+    return data.students;
+  };
+
+  const addCourse = (payload) => {
+    const data = read();
+    const code = String(payload.code || "").trim();
+    const title = String(payload.title || "").trim();
+    const units = Number(payload.units || 0);
+    const semester = String(payload.semester || "First Semester").trim();
+
+    if (!code || !title || !units) {
+      throw new Error("Course code, title, and units are required");
+    }
+
+    const duplicate = data.courses.some((course) => course.code.toLowerCase() === code.toLowerCase());
+    if (duplicate) {
+      throw new Error("Course code already exists");
+    }
+
+    data.courses.push({ id: uid("c"), code, title, units, semester });
+    write(data);
+    return data.courses;
+  };
+
+  const addRegistration = (payload) => {
+    const data = read();
+    const studentNo = String(payload.studentNo || "").trim();
+    const regNo = String(payload.regNo || "").trim();
+    const semester = String(payload.semester || "").trim();
+    const academicYear = String(payload.academicYear || "").trim();
+    const courses = Array.isArray(payload.courses) ? payload.courses : [];
+
+    if (!studentNo || !regNo || !semester || !academicYear) {
+      throw new Error("Registration fields are incomplete");
+    }
+
+    data.registrations.unshift({
+      id: uid("r"),
+      studentNo,
+      regNo,
+      semester,
+      academicYear,
+      courses,
+      createdAt: new Date().toISOString()
+    });
+
+    write(data);
+    return data.registrations;
+  };
+
+  const getDashboardData = (payload = {}) => {
+    const data = read();
+    const page = Number(payload.page || 1);
+    const limit = Number(payload.limit || 3);
+    const studentFilter = String(payload.studentNo || "").trim().toLowerCase();
+    const courseFilter = String(payload.courseCode || "").trim().toLowerCase();
+
+    const filtered = data.registrations.filter((item) => {
+      const byStudent = !studentFilter || item.studentNo.toLowerCase().includes(studentFilter);
+      const byCourse =
+        !courseFilter ||
+        item.courses.some((course) => String(course).toLowerCase().includes(courseFilter));
+      return byStudent && byCourse;
+    });
+
+    const pages = Math.max(1, Math.ceil(filtered.length / limit));
+    const safePage = Math.min(Math.max(page, 1), pages);
+    const start = (safePage - 1) * limit;
+    const list = filtered.slice(start, start + limit).map((item) => {
+      const firstCourse = item.courses[0] || "No course selected";
+      return `${item.studentNo} - ${firstCourse}`;
+    });
+
+    const departments = new Set(data.students.map((student) => student.department || "General")).size;
+    const pendingResults = Math.max(0, data.registrations.length - data.results.length);
+    const registrationHolds = data.students.filter((student) => student.status.toLowerCase() !== "active").length;
+
+    return {
+      activeStudents: data.students.length,
+      departments,
+      pendingResults,
+      registrationHolds,
+      recentRegistrations: list,
+      recentMeta: { page: safePage, pages },
+      tasks: [
+        "Approve course add/drop requests",
+        "Publish semester results",
+        "Update academic year settings"
+      ]
+    };
+  };
+
+  const queryResults = (payload = {}) => {
+    const data = read();
+    const page = Number(payload.page || 1);
+    const limit = Number(payload.limit || 5);
+    const studentNo = String(payload.studentNo || "").trim();
+    const academicYear = String(payload.academicYear || "").trim();
+    const semester = String(payload.semester || "").trim();
+    const minTotal = payload.min_total !== undefined ? Number(payload.min_total) : null;
+    const maxTotal = payload.max_total !== undefined ? Number(payload.max_total) : null;
+    const sort = payload.sort || "course_code";
+    const order = payload.order === "desc" ? "desc" : "asc";
+
+    let rows = data.results.filter((row) => {
+      const byStudent = !studentNo || row.studentNo === studentNo;
+      const byYear = !academicYear || row.academicYear === academicYear;
+      const bySemester = !semester || row.semester === semester;
+      const byMin = minTotal === null || Number(row.total) >= minTotal;
+      const byMax = maxTotal === null || Number(row.total) <= maxTotal;
+      return byStudent && byYear && bySemester && byMin && byMax;
+    });
+
+    const fieldMap = {
+      course_code: "course",
+      course_unit: "unit",
+      course_work: "ca",
+      exam: "exam",
+      total: "total"
+    };
+    const sortField = fieldMap[sort] || "course";
+
+    rows.sort((a, b) => {
+      const left = a[sortField];
+      const right = b[sortField];
+      if (typeof left === "number" && typeof right === "number") {
+        return order === "asc" ? left - right : right - left;
+      }
+      return order === "asc"
+        ? String(left).localeCompare(String(right))
+        : String(right).localeCompare(String(left));
+    });
+
+    const pages = Math.max(1, Math.ceil(rows.length / limit));
+    const safePage = Math.min(Math.max(page, 1), pages);
+    const start = (safePage - 1) * limit;
+    const pageRows = rows.slice(start, start + limit);
+
+    const allStudentRows = studentNo
+      ? data.results.filter((row) => row.studentNo === studentNo)
+      : rows;
+
+    return {
+      results: pageRows,
+      gpa: computeGpa(pageRows),
+      cgpa: computeGpa(allStudentRows),
+      meta: {
+        page: safePage,
+        pages,
+        total: rows.length
+      }
+    };
+  };
+
+  const getCourseOptions = () => {
+    const data = read();
+    return data.courses.map((course) => ({
+      id: course.id,
+      label: `${course.code} - ${course.title}`,
+      semester: course.semester
+    }));
+  };
+
+  const getAll = () => read();
+
+  window.SMISStore = {
+    ensure,
+    getAll,
+    addUser,
+    addStudent,
+    addCourse,
+    addRegistration,
+    getDashboardData,
+    queryResults,
+    getCourseOptions,
+    withStudentName
+  };
+})();
