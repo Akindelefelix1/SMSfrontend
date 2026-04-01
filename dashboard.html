@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMS - Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="index.html">SMS</a>
+      <nav class="nav">
+        <a href="login.html">Login</a>
+        <a href="dashboard.html" class="active">Dashboard</a>
+        <a href="registration.html">Registration</a>
+        <a href="results.html">Results</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p>Quick overview of admissions, registrations, and results.</p>
+      </div>
+      <button class="btn btn-outline">Generate Report</button>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <h3 id="statStudents">1,284</h3>
+        <p>Active Students</p>
+      </div>
+      <div class="stat">
+        <h3 id="statDepartments">56</h3>
+        <p>Departments</p>
+      </div>
+      <div class="stat">
+        <h3 id="statResults">312</h3>
+        <p>Pending Results</p>
+      </div>
+      <div class="stat">
+        <h3 id="statHolds">18</h3>
+        <p>Registration Holds</p>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <div class="card-header">
+          <h3>Recent Registrations</h3>
+          <div class="mini-form">
+            <input type="text" id="recentStudentNo" placeholder="Student no" />
+            <input type="text" id="recentCourseCode" placeholder="Course code" />
+            <button class="btn btn-outline" id="recentFilterBtn" type="button">Filter</button>
+          </div>
+        </div>
+        <ul class="list" id="recentRegistrations">
+          <li>20/1234 - B.Sc Computer Science</li>
+          <li>20/4521 - B.Ed Mathematics</li>
+          <li>21/9832 - B.Sc Biology</li>
+        </ul>
+        <div class="pager">
+          <button class="btn btn-outline" id="recentPrev" type="button">Prev</button>
+          <span id="recentPageInfo" class="muted">Page 1</span>
+          <button class="btn btn-outline" id="recentNext" type="button">Next</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Tasks</h3>
+        <ul class="list" id="taskList">
+          <li>Approve course add/drop requests</li>
+          <li>Publish semester results</li>
+          <li>Update academic year settings</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Quick Links</h3>
+        <div class="actions">
+          <button class="btn btn-outline">Manage Users</button>
+          <button class="btn btn-outline">Course Catalog</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/pages.js"></script>
+</body>
+</html>

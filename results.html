@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMS - Results</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="index.html">SMS</a>
+      <nav class="nav">
+        <a href="login.html">Login</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="registration.html">Registration</a>
+        <a href="results.html" class="active">Results</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <h1>Semester Results</h1>
+        <p>View grades, GPA, and CGPA summary.</p>
+      </div>
+      <button class="btn btn-outline">Download PDF</button>
+    </section>
+
+    <form id="resultsForm">
+      <section class="card">
+        <div class="form-grid">
+          <label>
+            <span>Student No</span>
+            <input type="text" name="studentNo" placeholder="20/1234" required />
+          </label>
+          <label>
+            <span>Academic Year</span>
+            <select name="academicYear" required>
+              <option>2025/2026</option>
+              <option>2026/2027</option>
+            </select>
+          </label>
+          <label>
+            <span>Semester</span>
+            <select name="semester" required>
+              <option>First Semester</option>
+              <option>Second Semester</option>
+            </select>
+          </label>
+          <label>
+            <span>Program</span>
+            <input type="text" name="program" placeholder="B.Sc Computer Science" />
+          </label>
+          <label>
+            <span>Course ID</span>
+            <input type="number" name="courseId" placeholder="e.g. 1" />
+          </label>
+          <label>
+            <span>Min Total</span>
+            <input type="number" name="minTotal" placeholder="50" />
+          </label>
+          <label>
+            <span>Max Total</span>
+            <input type="number" name="maxTotal" placeholder="100" />
+          </label>
+          <label>
+            <span>Sort By</span>
+            <select name="sort">
+              <option value="course_code">Course Code</option>
+              <option value="course_unit">Course Unit</option>
+              <option value="course_work">Course Work</option>
+              <option value="exam">Exam</option>
+              <option value="total">Total</option>
+            </select>
+          </label>
+          <label>
+            <span>Order</span>
+            <select name="order">
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </label>
+        </div>
+        <div class="actions" style="margin-top: 16px;">
+          <button class="btn" type="submit">Fetch Results</button>
+        </div>
+      </section>
+    </form>
+
+    <section class="card">
+      <h2>Result Breakdown</h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Unit</th>
+            <th>CA</th>
+            <th>Exam</th>
+            <th>Total</th>
+            <th>Grade</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr>
+            <td>CSC 201</td>
+            <td>3</td>
+            <td>25</td>
+            <td>62</td>
+            <td>87</td>
+            <td>A</td>
+          </tr>
+          <tr>
+            <td>CSC 203</td>
+            <td>2</td>
+            <td>22</td>
+            <td>58</td>
+            <td>80</td>
+            <td>A</td>
+          </tr>
+          <tr>
+            <td>MTH 201</td>
+            <td>3</td>
+            <td>18</td>
+            <td>52</td>
+            <td>70</td>
+            <td>B</td>
+          </tr>
+          <tr>
+            <td>GST 201</td>
+            <td>2</td>
+            <td>20</td>
+            <td>50</td>
+            <td>70</td>
+            <td>B</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="summary">
+        <div>
+          <h3>GPA</h3>
+          <p id="gpaValue">4.45</p>
+        </div>
+        <div>
+          <h3>CGPA</h3>
+          <p id="cgpaValue">4.12</p>
+        </div>
+      </div>
+      <div class="pager">
+        <button class="btn btn-outline" id="resultsPrev" type="button">Prev</button>
+        <span id="resultsPageInfo" class="muted">Page 1</span>
+        <button class="btn btn-outline" id="resultsNext" type="button">Next</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/pages.js"></script>
+</body>
+</html>

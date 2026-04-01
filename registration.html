@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMS - Course Registration</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="index.html">SMS</a>
+      <nav class="nav">
+        <a href="login.html">Login</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="registration.html" class="active">Registration</a>
+        <a href="results.html">Results</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <h1>Course Registration</h1>
+        <p>Select your courses for the current semester.</p>
+      </div>
+      <div class="pill">Deadline: 30 Apr 2026</div>
+    </section>
+
+    <form id="registrationForm">
+      <section class="card">
+        <h2>Student Info</h2>
+        <div class="form-grid">
+          <label>
+            <span>Student No</span>
+            <input type="text" name="studentNo" placeholder="20/1234" required />
+          </label>
+          <label>
+            <span>Registration No</span>
+            <input type="text" name="regNo" placeholder="REG/CS/2026/014" required />
+          </label>
+          <label>
+            <span>Semester</span>
+            <select name="semester" required>
+              <option>First Semester</option>
+              <option>Second Semester</option>
+            </select>
+          </label>
+          <label>
+            <span>Academic Year</span>
+            <select name="academicYear" required>
+              <option>2025/2026</option>
+              <option>2026/2027</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <h3>Available Courses</h3>
+          <div class="checklist" id="courseChecklist">
+            <label><input type="checkbox" data-course="CSC 201 - Data Structures" /> CSC 201 - Data Structures</label>
+            <label><input type="checkbox" data-course="CSC 203 - Web Development" /> CSC 203 - Web Development</label>
+            <label><input type="checkbox" data-course="MTH 201 - Linear Algebra" /> MTH 201 - Linear Algebra</label>
+            <label><input type="checkbox" data-course="GST 201 - Entrepreneurship" /> GST 201 - Entrepreneurship</label>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Selected Courses</h3>
+          <ul class="list" id="selectedCourses">
+            <li>CSC 201 - Data Structures</li>
+            <li>GST 201 - Entrepreneurship</li>
+          </ul>
+          <button class="btn" type="submit">Submit Registration</button>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <script src="assets/js/pages.js"></script>
+</body>
+</html>

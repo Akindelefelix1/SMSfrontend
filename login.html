@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMS - Login</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="index.html">SMS</a>
+      <nav class="nav">
+        <a href="login.html" class="active">Login</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="registration.html">Registration</a>
+        <a href="results.html">Results</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="auth-card">
+      <div class="auth-header">
+        <h1>Welcome Back</h1>
+        <p>Sign in as a student or admin.</p>
+      </div>
+      <form class="form" id="loginForm">
+        <label>
+          <span>Username</span>
+          <input type="text" name="username" placeholder="e.g. 20/1234" required />
+        </label>
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" placeholder="••••••••" required />
+        </label>
+        <label class="inline">
+          <input type="checkbox" />
+          <span>Remember me</span>
+        </label>
+        <button class="btn" type="submit">Login</button>
+        <p class="muted">New here? Contact admin for account creation.</p>
+      </form>
+    </section>
+  </main>
+
+  <script src="assets/js/pages.js"></script>
+</body>
+</html>
