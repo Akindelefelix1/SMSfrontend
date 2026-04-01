@@ -124,6 +124,13 @@ if (registrationForm) {
 const resultsForm = document.getElementById("resultsForm");
 const reportEntryForm = document.getElementById("reportEntryForm");
 const reportStudentNo = document.getElementById("reportStudentNo");
+const reportAcademicYear = document.getElementById("reportAcademicYear");
+const reportSemester = document.getElementById("reportSemester");
+const reportCourse = document.getElementById("reportCourse");
+const reportUnit = document.getElementById("reportUnit");
+const reportCa = document.getElementById("reportCa");
+const reportExam = document.getElementById("reportExam");
+const reportTotal = document.getElementById("reportTotal");
 const resultsStudentNo = document.getElementById("resultsStudentNo");
 const resultsBody = document.getElementById("resultsBody");
 const gpaValue = document.getElementById("gpaValue");
@@ -202,6 +209,67 @@ const populateStudentDropdowns = () => {
 
 populateStudentDropdowns();
 
+const refreshReportCourseDropdown = () => {
+  if (!store || !reportCourse) return;
+
+  const studentNo = reportStudentNo ? reportStudentNo.value : "";
+  const academicYear = reportAcademicYear ? reportAcademicYear.value : "";
+  const semester = reportSemester ? reportSemester.value : "";
+  const registered = store.getRegisteredCourses({ studentNo, academicYear, semester });
+
+  reportCourse.innerHTML =
+    '<option value="">Select registered course</option>' +
+    registered
+      .map(
+        (item) =>
+          `<option value="${item.code}" data-unit="${item.unit || ""}">${item.label}</option>`
+      )
+      .join("");
+
+  if (reportUnit) {
+    reportUnit.value = "";
+  }
+};
+
+const syncReportTotal = () => {
+  if (!reportTotal) return;
+  const ca = Number(reportCa && reportCa.value ? reportCa.value : 0);
+  const exam = Number(reportExam && reportExam.value ? reportExam.value : 0);
+  reportTotal.value = String(ca + exam);
+};
+
+if (reportCourse) {
+  reportCourse.addEventListener("change", () => {
+    const selected = reportCourse.options[reportCourse.selectedIndex];
+    if (reportUnit) {
+      reportUnit.value = selected ? selected.getAttribute("data-unit") || "" : "";
+    }
+  });
+}
+
+if (reportStudentNo) {
+  reportStudentNo.addEventListener("change", refreshReportCourseDropdown);
+}
+
+if (reportAcademicYear) {
+  reportAcademicYear.addEventListener("change", refreshReportCourseDropdown);
+}
+
+if (reportSemester) {
+  reportSemester.addEventListener("change", refreshReportCourseDropdown);
+}
+
+if (reportCa) {
+  reportCa.addEventListener("input", syncReportTotal);
+}
+
+if (reportExam) {
+  reportExam.addEventListener("input", syncReportTotal);
+}
+
+refreshReportCourseDropdown();
+syncReportTotal();
+
 if (reportEntryForm) {
   reportEntryForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -242,6 +310,8 @@ if (reportEntryForm) {
       };
 
       await fetchResults(lastResultsPayload);
+      refreshReportCourseDropdown();
+      syncReportTotal();
     } catch (err) {
       flash(err.message);
     }

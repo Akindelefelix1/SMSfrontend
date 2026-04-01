@@ -562,6 +562,39 @@
     }));
   };
 
+  const getRegisteredCourses = (payload = {}) => {
+    const data = read();
+    const studentNo = String(payload.studentNo || "").trim();
+    const academicYear = String(payload.academicYear || "").trim();
+    const semester = String(payload.semester || "").trim();
+
+    if (!studentNo || !academicYear || !semester) {
+      return [];
+    }
+
+    const labels = new Set();
+    data.registrations
+      .filter(
+        (item) =>
+          item.studentNo === studentNo &&
+          item.academicYear === academicYear &&
+          item.semester === semester
+      )
+      .forEach((item) => {
+        item.courses.forEach((label) => labels.add(label));
+      });
+
+    return Array.from(labels).map((label) => {
+      const code = String(label).split(" - ")[0].trim();
+      const matched = data.courses.find((course) => course.code === code);
+      return {
+        code,
+        label,
+        unit: matched ? Number(matched.units) : null,
+      };
+    });
+  };
+
   const getAll = () => read();
 
   const exportData = () => JSON.stringify(read(), null, 2);
@@ -612,6 +645,7 @@
     getDashboardData,
     queryResults,
     getCourseOptions,
+    getRegisteredCourses,
     withStudentName
   };
 })();
