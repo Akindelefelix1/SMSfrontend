@@ -123,6 +123,7 @@ if (registrationForm) {
 
 const resultsForm = document.getElementById("resultsForm");
 const reportEntryForm = document.getElementById("reportEntryForm");
+const reportStudentNo = document.getElementById("reportStudentNo");
 const resultsBody = document.getElementById("resultsBody");
 const gpaValue = document.getElementById("gpaValue");
 const cgpaValue = document.getElementById("cgpaValue");
@@ -175,6 +176,23 @@ const fetchResults = async (payload) => {
     }
   }
 };
+
+const populateReportStudentDropdown = () => {
+  if (!reportStudentNo || !store) return;
+  const allData = store.getAll();
+  const students = Array.isArray(allData.students) ? allData.students : [];
+
+  reportStudentNo.innerHTML =
+    '<option value="">Select student</option>' +
+    students
+      .map(
+        (student) =>
+          `<option value="${student.studentNo}">${student.studentNo} - ${student.name}</option>`
+      )
+      .join("");
+};
+
+populateReportStudentDropdown();
 
 if (reportEntryForm) {
   reportEntryForm.addEventListener("submit", async (event) => {
