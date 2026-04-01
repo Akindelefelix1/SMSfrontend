@@ -24,9 +24,9 @@
       { id: "c4", code: "GST 201", title: "Entrepreneurship", units: 2, semester: "First Semester" }
     ],
     tasks: [
-      { id: "t1", text: "Approve course add/drop requests" },
-      { id: "t2", text: "Publish semester results" },
-      { id: "t3", text: "Update academic year settings" }
+      { id: "t1", text: "Approve course add/drop requests", completed: false },
+      { id: "t2", text: "Publish semester results", completed: false },
+      { id: "t3", text: "Update academic year settings", completed: false }
     ],
     registrations: [
       {
@@ -118,6 +118,7 @@
             return {
               id: `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
               text,
+              completed: false,
             };
           }
 
@@ -126,6 +127,7 @@
           return {
             id: String(item.id || `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`),
             text,
+            completed: Boolean(item.completed),
           };
         })
         .filter(Boolean);
@@ -595,7 +597,31 @@
       data.tasks = [];
     }
 
-    data.tasks.unshift({ id: uid("t"), text });
+    data.tasks.unshift({ id: uid("t"), text, completed: false });
+    write(data);
+    return data.tasks;
+  };
+
+  const toggleTask = (id) => {
+    const data = read();
+    const task = Array.isArray(data.tasks) ? data.tasks.find((item) => item.id === id) : null;
+    if (!task) {
+      throw new Error("Task not found");
+    }
+
+    task.completed = !Boolean(task.completed);
+    write(data);
+    return data.tasks;
+  };
+
+  const deleteTask = (id) => {
+    const data = read();
+    const before = Array.isArray(data.tasks) ? data.tasks.length : 0;
+    data.tasks = (Array.isArray(data.tasks) ? data.tasks : []).filter((item) => item.id !== id);
+    if (data.tasks.length === before) {
+      throw new Error("Task not found");
+    }
+
     write(data);
     return data.tasks;
   };
@@ -790,6 +816,7 @@
           return {
             id: `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
             text,
+            completed: false,
           };
         }
 
@@ -798,6 +825,7 @@
         return {
           id: String(item.id || `t-${index + 1}-${text.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`),
           text,
+          completed: Boolean(item.completed),
         };
       })
       .filter(Boolean);
@@ -844,6 +872,8 @@
     addRegistration,
     addResult,
     addTask,
+    toggleTask,
+    deleteTask,
     getDashboardData,
     queryResults,
     getCourseOptions,

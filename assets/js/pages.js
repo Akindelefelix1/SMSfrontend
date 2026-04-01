@@ -394,9 +394,17 @@ if (dashboardStats) {
   let usingLocalData = false;
   const taskForm = document.getElementById("taskForm");
   const taskInput = document.getElementById("taskInput");
+  const taskList = document.getElementById("taskList");
+
+  const escapeHtml = (value) =>
+    String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
 
   const renderTaskItems = (tasks) => {
-    const taskList = document.getElementById("taskList");
     if (!taskList) return;
 
     const normalized = (Array.isArray(tasks) ? tasks : [])
@@ -407,12 +415,26 @@ if (dashboardStats) {
         return {
           id: String(item.id || ""),
           text: String(item.text || "").trim(),
+          completed: Boolean(item.completed),
         };
       })
       .filter((item) => item.text);
 
     taskList.innerHTML = normalized.length
-      ? normalized.map((item) => `<li>${item.text}</li>`).join("")
+      ? normalized
+          .map(
+            (item) => `
+              <li>
+                <div class="actions" style="justify-content: space-between; width: 100%;">
+                  <label class="inline" style="margin: 0;">
+                    <input type="checkbox" data-task-toggle="${item.id}" ${item.completed ? "checked" : ""} ${item.id ? "" : "disabled"} />
+                    <span style="${item.completed ? "text-decoration: line-through;" : ""}">${escapeHtml(item.text)}</span>
+                  </label>
+                  <button class="btn btn-outline" type="button" data-task-delete="${item.id}" ${item.id ? "" : "disabled"}>Delete</button>
+                </div>
+              </li>`
+          )
+          .join("")
       : "<li>No tasks yet.</li>";
   };
 
@@ -502,6 +524,53 @@ if (dashboardStats) {
         renderDashboard(localData);
         usingLocalData = true;
         flash("Task added.");
+      } catch (error) {
+        flash(error.message);
+      }
+    });
+  }
+
+  if (taskList) {
+    taskList.addEventListener("change", (event) => {
+      const toggleInput = event.target.closest("[data-task-toggle]");
+      if (!toggleInput || !store) return;
+
+      const taskId = toggleInput.getAttribute("data-task-toggle");
+      if (!taskId) return;
+
+      try {
+        store.toggleTask(taskId);
+        const localData = store.getDashboardData({
+          page: recentPage,
+          limit: recentLimit,
+          studentNo: document.getElementById("recentStudentNo")?.value.trim() || "",
+          courseCode: document.getElementById("recentCourseCode")?.value.trim() || "",
+        });
+        renderDashboard(localData);
+      } catch (error) {
+        flash(error.message);
+      }
+    });
+
+    taskList.addEventListener("click", (event) => {
+      const deleteBtn = event.target.closest("[data-task-delete]");
+      if (!deleteBtn || !store) return;
+
+      const taskId = deleteBtn.getAttribute("data-task-delete");
+      if (!taskId) return;
+
+      if (!window.confirm("Delete this task?")) return;
+
+      try {
+        store.deleteTask(taskId);
+        const localData = store.getDashboardData({
+          page: recentPage,
+          limit: recentLimit,
+          studentNo: document.getElementById("recentStudentNo")?.value.trim() || "",
+          courseCode: document.getElementById("recentCourseCode")?.value.trim() || "",
+        });
+        renderDashboard(localData);
+        flash("Task deleted.");
       } catch (error) {
         flash(error.message);
       }
