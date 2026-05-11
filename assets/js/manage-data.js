@@ -22,6 +22,19 @@ if (store) {
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
+  const studentFilterInput = document.getElementById("studentFilterInput");
+  const studentFilterClear = document.getElementById("studentFilterClear");
+  const getStudentFilter = () =>
+    String(studentFilterInput ? studentFilterInput.value : "").trim().toLowerCase();
+
+  if (studentFilterInput) {
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get("student");
+    if (fromQuery) {
+      studentFilterInput.value = fromQuery;
+    }
+  }
+
   const renderUsers = () => {
     const usersBody = document.getElementById("usersBody");
     if (!usersBody) return;
@@ -49,7 +62,15 @@ if (store) {
     const studentsBody = document.getElementById("studentsBody");
     if (!studentsBody) return;
     const data = store.getAll();
-    studentsBody.innerHTML = data.students
+    const filter = getStudentFilter();
+    const rows = data.students.filter((student) => {
+      if (!filter) return true;
+      return (
+        String(student.studentNo).toLowerCase().includes(filter) ||
+        String(student.name).toLowerCase().includes(filter)
+      );
+    });
+    studentsBody.innerHTML = rows
       .map(
         (student) => `
           <tr>
@@ -67,6 +88,11 @@ if (store) {
           </tr>`
       )
       .join("");
+
+    if (!rows.length) {
+      studentsBody.innerHTML =
+        '<tr><td colspan="6" class="muted">No matching students found.</td></tr>';
+    }
   };
 
   const renderCourses = () => {
@@ -136,6 +162,19 @@ if (store) {
     renderDepartments();
     populateDepartmentSelects();
   };
+
+  if (studentFilterInput) {
+    studentFilterInput.addEventListener("input", () => {
+      renderStudents();
+    });
+  }
+
+  if (studentFilterClear) {
+    studentFilterClear.addEventListener("click", () => {
+      if (studentFilterInput) studentFilterInput.value = "";
+      renderStudents();
+    });
+  }
 
   const userForm = document.getElementById("userForm");
   if (userForm) {

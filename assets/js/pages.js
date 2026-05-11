@@ -6,6 +6,378 @@ if (store) {
   store.ensure();
 }
 
+const SESSION_KEY = "sms_session_v1";
+
+const getSession = () => {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_err) {
+    return null;
+  }
+};
+
+const setSession = (session) => {
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+};
+
+const clearSession = () => {
+  localStorage.removeItem(SESSION_KEY);
+};
+
+const resolveRole = (username) => {
+  const normalized = String(username || "").trim();
+  if (!normalized) return "";
+  if (/^admin\d*$/i.test(normalized)) return "admin";
+  if (/^\d/.test(normalized)) return "student";
+  return "";
+};
+
+const formatSessionDate = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString();
+};
+
+const getPageName = () => {
+  const path = window.location.pathname.split("/");
+  return path[path.length - 1] || "";
+};
+
+const buildNav = (role) => {
+  const nav = document.querySelector(".nav");
+  if (!nav) return;
+
+  const links = [];
+  if (role === "admin") {
+    links.push(
+      { label: "Dashboard", href: "dashboard.html" },
+      { label: "Students", href: "students.html" },
+      { label: "Users", href: "users.html" },
+      { label: "Catalog", href: "catalog.html" },
+      { label: "Reports", href: "reports.html" },
+      { label: "Results", href: "results.html" }
+    );
+  } else if (role === "student") {
+    links.push(
+      { label: "Dashboard", href: "student-dashboard.html" },
+      { label: "Registration", href: "registration.html" },
+      { label: "Results", href: "results.html" }
+    );
+  } else {
+    links.push({ label: "Login", href: "login.html" });
+  }
+
+  nav.innerHTML = links
+    .map((item) => `<a href="${item.href}">${item.label}</a>`)
+    .join("");
+
+  if (role && role !== "guest") {
+    const logout = document.createElement("a");
+    logout.href = "#";
+    logout.textContent = "Logout";
+    logout.setAttribute("data-logout", "true");
+    nav.appendChild(logout);
+  }
+
+  const current = getPageName();
+  nav.querySelectorAll("a[href]").forEach((link) => {
+    const href = link.getAttribute("href");
+    if (href === current) {
+      link.classList.add("active");
+    }
+  });
+};
+
+const applyRoleVisibility = (role) => {
+  document.querySelectorAll("[data-role]").forEach((node) => {
+    const required = node.getAttribute("data-role");
+    if (!required || !role) {
+      node.style.display = "none";
+      return;
+    }
+    node.style.display = required === role ? "" : "none";
+  });
+};
+
+const applyRouteGuard = (role) => {
+  const page = getPageName();
+  const adminPages = new Set([
+    "dashboard.html",
+    "students.html",
+    "users.html",
+    "catalog.html",
+    "reports.html"
+  ]);
+  const studentPages = new Set([
+    "student-dashboard.html",
+    "registration.html"
+  ]);
+  const sharedPages = new Set(["results.html"]);
+
+  if (!page || page === "index.html") return;
+
+  if (page === "login.html" && role) {
+    window.location.href = role === "admin" ? "dashboard.html" : "student-dashboard.html";
+    return;
+  }
+
+  if (!role) {
+    if (adminPages.has(page) || studentPages.has(page) || sharedPages.has(page)) {
+      window.location.href = "login.html";
+    }
+    return;
+  }
+
+  if (role === "admin" && studentPages.has(page)) {
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  if (role === "student" && adminPages.has(page)) {
+    window.location.href = "student-dashboard.html";
+  }
+};
+
+const applySessionDetails = (session) => {
+  document.querySelectorAll("[data-session='username']").forEach((node) => {
+    node.textContent = session && session.username ? session.username : "Guest";
+  });
+
+  document.querySelectorAll("[data-session='lastLogin']").forEach((node) => {
+    node.textContent = formatSessionDate(session && session.lastLogin);
+  });
+};
+
+const computeGpa = (rows) => {
+  if (!rows.length) return "0.00";
+  const gradePoint = (grade) => {
+    if (grade === "A") return 5;
+    if (grade === "B") return 4;
+    if (grade === "C") return 3;
+    if (grade === "D") return 2;
+    if (grade === "E") return 1;
+    return 0;
+  };
+  const totals = rows.reduce(
+    (acc, row) => {
+      const units = Number(row.unit) || 0;
+      return {
+        quality: acc.quality + gradePoint(row.grade) * units,
+        units: acc.units + units,
+      };
+    },
+    { quality: 0, units: 0 }
+  );
+  if (!totals.units) return "0.00";
+  return (totals.quality / totals.units).toFixed(2);
+};
+
+const renderAdminActivity = () => {
+  const list = document.getElementById("adminActivityList");
+  if (!list || !store) return;
+
+  const data = store.getAll();
+  const items = [];
+  const latestStudent = data.students[data.students.length - 1];
+  if (latestStudent) {
+    items.push(`Student added: ${latestStudent.name} (${latestStudent.studentNo})`);
+  }
+
+  const latestUser = data.users[data.users.length - 1];
+  if (latestUser) {
+    items.push(`User added: ${latestUser.name} (${latestUser.role})`);
+  }
+
+  const latestCourse = data.courses[data.courses.length - 1];
+  if (latestCourse) {
+    items.push(`Course added: ${latestCourse.code} (${latestCourse.title})`);
+  }
+  const latestRegistration = data.registrations[0];
+  if (latestRegistration) {
+    const studentName = store.withStudentName(latestRegistration.studentNo, data.students);
+    items.push(
+      `New registration: ${studentName} (${latestRegistration.studentNo})`
+    );
+  }
+
+  const latestResult = data.results[data.results.length - 1];
+  if (latestResult) {
+    const studentName = store.withStudentName(latestResult.studentNo, data.students);
+    items.push(`Result added: ${latestResult.course} for ${studentName}`);
+  }
+
+  const recentTask = Array.isArray(data.tasks) ? data.tasks[0] : null;
+  if (recentTask && recentTask.text) {
+    items.push(`Task created: ${recentTask.text}`);
+  }
+
+  list.innerHTML = items.length
+    ? items.map((item) => `<li>${item}</li>`).join("")
+    : '<li class="empty-state">No recent activity yet.</li>';
+};
+
+const initAdminSearch = () => {
+  const input = document.getElementById("adminStudentSearch");
+  const button = document.getElementById("adminStudentSearchBtn");
+  if (!input || !button) return;
+
+  const go = () => {
+    const value = String(input.value || "").trim();
+    if (!value) return;
+    window.location.href = `students.html?student=${encodeURIComponent(value)}`;
+  };
+
+  button.addEventListener("click", go);
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      go();
+    }
+  });
+};
+
+const renderSystemStatus = () => {
+  const dataMode = document.getElementById("systemDataMode");
+  const onlineStatus = document.getElementById("systemOnline");
+  const systemTime = document.getElementById("systemTimestamp");
+
+  if (dataMode) {
+    dataMode.textContent = store ? "Local Offline" : "Backend";
+  }
+  if (onlineStatus) {
+    onlineStatus.textContent = navigator.onLine ? "Online" : "Offline";
+  }
+  if (systemTime) {
+    systemTime.textContent = new Date().toLocaleString();
+  }
+};
+
+const renderStudentDashboard = () => {
+  const root = document.getElementById("studentDashboard");
+  if (!root || !store) return;
+
+  const session = getSession();
+  const studentNo = session ? String(session.username || "") : "";
+  const data = store.getAll();
+  const student = data.students.find((item) => item.studentNo === studentNo);
+
+  const setText = (id, value) => {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+  };
+
+  setText("studentName", student ? student.name : "Student");
+  setText("studentNo", studentNo || "—");
+  setText("studentDepartment", student ? student.department : "—");
+  setText("studentLevel", student ? student.level : "—");
+  setText("studentStatus", student ? student.status : "—");
+
+  const registrations = data.registrations.filter((item) => item.studentNo === studentNo);
+  const results = data.results.filter((item) => item.studentNo === studentNo);
+  setText("registrationCount", String(registrations.length));
+  setText("resultsCount", String(results.length));
+  setText("studentGpa", computeGpa(results));
+  setText("studentCgpa", computeGpa(results));
+
+  const latestRegistration = registrations[0];
+  if (latestRegistration) {
+    const courseCodes = latestRegistration.courses.map((course) => String(course).split(" - ")[0]);
+    const totalUnits = courseCodes.reduce((total, code) => {
+      const match = data.courses.find((course) => course.code === code);
+      return total + (match ? Number(match.units) : 0);
+    }, 0);
+    setText("registeredUnits", String(totalUnits));
+
+    const semesterResults = results.filter(
+      (row) =>
+        row.academicYear === latestRegistration.academicYear &&
+        row.semester === latestRegistration.semester
+    );
+    const pending = Math.max(0, courseCodes.length - semesterResults.length);
+    setText("pendingResults", String(pending));
+  } else {
+    setText("registeredUnits", "0");
+    setText("pendingResults", "0");
+  }
+
+  const registrationStatus = document.getElementById("registrationStatus");
+  if (registrationStatus) {
+    if (latestRegistration) {
+      registrationStatus.textContent = `${latestRegistration.regNo} · ${latestRegistration.academicYear} ${latestRegistration.semester}`;
+    } else {
+      registrationStatus.textContent = "No registration submitted yet.";
+    }
+  }
+
+  const registeredCoursesList = document.getElementById("registeredCoursesList");
+  if (registeredCoursesList) {
+    if (latestRegistration && latestRegistration.courses.length) {
+      registeredCoursesList.innerHTML = latestRegistration.courses
+        .slice(0, 4)
+        .map((course) => `<li>${course}</li>`)
+        .join("");
+    } else {
+      registeredCoursesList.innerHTML = '<li class="empty-state">No courses registered yet.</li>';
+    }
+  }
+
+  const recentResultsList = document.getElementById("recentResultsList");
+  if (recentResultsList) {
+    if (results.length) {
+      const recent = results.slice(-3).reverse();
+      recentResultsList.innerHTML = recent
+        .map((row) => `<li>${row.course} · ${row.total} (${row.grade})</li>`)
+        .join("");
+    } else {
+      recentResultsList.innerHTML = '<li class="empty-state">No results published yet.</li>';
+    }
+  }
+
+  const trendList = document.getElementById("gpaTrendList");
+  if (trendList) {
+    const byTerm = new Map();
+    results.forEach((row) => {
+      const key = `${row.academicYear} ${row.semester}`;
+      if (!byTerm.has(key)) byTerm.set(key, []);
+      byTerm.get(key).push(row);
+    });
+
+    const sorted = Array.from(byTerm.entries())
+      .map(([term, rows]) => ({ term, gpa: computeGpa(rows) }))
+      .slice(-3)
+      .reverse();
+
+    trendList.innerHTML = sorted.length
+      ? sorted.map((item) => `<li>${item.term} · GPA ${item.gpa}</li>`).join("")
+      : '<li class="empty-state">No GPA history yet.</li>';
+  }
+};
+
+const bootNavigation = () => {
+  const session = getSession();
+  const role = session ? session.role : "";
+  buildNav(role);
+  applyRoleVisibility(role);
+  applySessionDetails(session);
+  applyRouteGuard(role);
+  renderAdminActivity();
+  renderSystemStatus();
+  renderStudentDashboard();
+  initAdminSearch();
+};
+
+document.addEventListener("click", (event) => {
+  const logout = event.target.closest("[data-logout]");
+  if (!logout) return;
+  event.preventDefault();
+  clearSession();
+  window.location.href = "login.html";
+});
+
+bootNavigation();
+
 const flash = (message) => {
   const toast = document.createElement("div");
   toast.className = "toast";
@@ -51,9 +423,15 @@ if (loginForm) {
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const formData = new FormData(loginForm);
+    const username = String(formData.get("username") || "").trim();
+    const role = resolveRole(username);
+    if (!role) {
+      flash("Use an admin* username or a student number to continue.");
+      return;
+    }
     try {
       const result = await postJson("/api/login.php", {
-        username: formData.get("username"),
+        username,
         password: formData.get("password"),
       });
       flash(result.message);
@@ -64,6 +442,9 @@ if (loginForm) {
         flash(err.message);
       }
     }
+
+    setSession({ username, role, lastLogin: new Date().toISOString() });
+    window.location.href = role === "admin" ? "dashboard.html" : "student-dashboard.html";
   });
 }
 

@@ -1,0 +1,9 @@
+{
+  "name": "smsfrontend",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static school management system frontend",
+  "scripts": {
+    "start": "npx live-server ."
+  }
+}

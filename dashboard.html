@@ -24,6 +24,10 @@
       <div>
         <h1>Admin Dashboard</h1>
         <p>Quick overview of admissions, registrations, and results.</p>
+        <div class="hero-meta">
+          <span>Welcome, <strong data-session="username">Admin</strong></span>
+          <span class="muted">Last login: <span data-session="lastLogin">—</span></span>
+        </div>
       </div>
       <a class="btn btn-outline" href="reports.html">Generate Report</a>
     </section>
@@ -48,6 +52,14 @@
     </section>
 
     <section class="grid">
+      <div class="card">
+        <h3>Find Student</h3>
+        <p class="muted">Jump to a student record by student number.</p>
+        <div class="mini-form" style="margin-top: 12px;">
+          <input type="text" id="adminStudentSearch" placeholder="e.g. 20/1234" />
+          <button class="btn" id="adminStudentSearchBtn" type="button">Search</button>
+        </div>
+      </div>
       <div class="card">
         <div class="card-header">
           <h3>Recent Registrations</h3>
@@ -78,6 +90,20 @@
           <li>Approve course add/drop requests</li>
           <li>Publish semester results</li>
           <li>Update academic year settings</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>System Status</h3>
+        <ul class="meta-list">
+          <li><span>Data Mode</span><strong id="systemDataMode">Local Offline</strong></li>
+          <li><span>Network</span><strong id="systemOnline">Online</strong></li>
+          <li><span>Checked</span><strong id="systemTimestamp">—</strong></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Recent Activity</h3>
+        <ul class="list" id="adminActivityList">
+          <li class="empty-state">No recent activity yet.</li>
         </ul>
       </div>
       <div class="card">

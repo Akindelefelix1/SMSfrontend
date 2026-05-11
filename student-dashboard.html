@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SMS - Student Dashboard</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="index.html">SMS</a>
+      <nav class="nav">
+        <a href="login.html">Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" id="studentDashboard">
+    <section class="hero">
+      <div>
+        <h1>Student Dashboard</h1>
+        <p>Quick access to course registration and semester results.</p>
+        <div class="hero-meta">
+          <span>Welcome, <strong id="studentName">Student</strong></span>
+          <span class="muted">Last login: <span data-session="lastLogin">—</span></span>
+        </div>
+      </div>
+      <a class="btn btn-outline" href="registration.html">Start Registration</a>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <h3 id="registrationCount">0</h3>
+        <p>Registrations</p>
+      </div>
+      <div class="stat">
+        <h3 id="registeredUnits">0</h3>
+        <p>Total Units</p>
+      </div>
+      <div class="stat">
+        <h3 id="resultsCount">0</h3>
+        <p>Results Published</p>
+      </div>
+      <div class="stat">
+        <h3 id="pendingResults">0</h3>
+        <p>Pending Results</p>
+      </div>
+      <div class="stat">
+        <h3 id="studentGpa">0.00</h3>
+        <p>GPA</p>
+      </div>
+      <div class="stat">
+        <h3 id="studentCgpa">0.00</h3>
+        <p>CGPA</p>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h3>Registration</h3>
+        <p>Pick courses for the current semester and submit your registration.</p>
+        <div class="actions">
+          <a class="btn" href="registration.html">Register Courses</a>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Profile</h3>
+        <ul class="meta-list">
+          <li><span>Student No</span><strong id="studentNo">—</strong></li>
+          <li><span>Department</span><strong id="studentDepartment">—</strong></li>
+          <li><span>Level</span><strong id="studentLevel">—</strong></li>
+          <li><span>Status</span><strong id="studentStatus">—</strong></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Results</h3>
+        <p>Check GPA and CGPA summaries as soon as results are published.</p>
+        <div class="actions">
+          <a class="btn btn-outline" href="results.html">View Results</a>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Registration Status</h3>
+        <p class="muted" id="registrationStatus">No registration submitted yet.</p>
+        <ul class="list" id="registeredCoursesList">
+          <li class="empty-state">No courses registered yet.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Recent Results</h3>
+        <ul class="list" id="recentResultsList">
+          <li class="empty-state">No results published yet.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>GPA Trend</h3>
+        <ul class="list" id="gpaTrendList">
+          <li class="empty-state">No GPA history yet.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Announcements</h3>
+        <ul class="list">
+          <li>Registration closes on 30 Apr 2026.</li>
+          <li>Results publish after department approval.</li>
+          <li>Contact support for profile updates.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/local-store.js"></script>
+  <script src="assets/js/pages.js"></script>
+</body>
+</html>

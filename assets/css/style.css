@@ -84,6 +84,19 @@ body {
   padding: 28px 0 18px;
 }
 
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.hero-meta strong {
+  color: var(--ink);
+}
+
 .card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -206,6 +219,31 @@ body {
   gap: 10px;
 }
 
+.meta-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.meta-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meta-list strong {
+  font-weight: 600;
+}
+
+.empty-state {
+  color: var(--muted);
+  font-style: italic;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -304,6 +342,11 @@ body {
   }
 
   .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-meta {
     flex-direction: column;
     align-items: flex-start;
   }
