@@ -6,13 +6,14 @@ if (store) {
   store.ensure();
 }
 
-const withLoading = async (work, label) => {
+const withLoading = async (work, label, options = {}) => {
   const loading = window.SMISLoading;
-  if (loading) loading.start(label || "Loading...");
+  const overlay = Boolean(options.overlay);
+  if (loading && overlay) loading.start(label || "Loading...");
   try {
     return await work();
   } finally {
-    if (loading) loading.stop();
+    if (loading && overlay) loading.stop();
   }
 };
 
@@ -462,7 +463,7 @@ const getAuthHeaders = () => {
   return { Authorization: `Bearer ${session.token}` };
 };
 
-const postJson = async (path, payload, label) =>
+const postJson = async (path, payload, label, options) =>
   withLoading(async () => {
     const response = await fetch(`${API_BASE}${path}`, {
       method: "POST",
@@ -477,9 +478,9 @@ const postJson = async (path, payload, label) =>
       throw new Error(data.message || "Request failed");
     }
     return data;
-  }, label);
+  }, label, options);
 
-const getJson = async (path, label) =>
+const getJson = async (path, label, options) =>
   withLoading(async () => {
     const response = await fetch(`${API_BASE}${path}`, {
       headers: { ...getAuthHeaders() },
@@ -489,7 +490,7 @@ const getJson = async (path, label) =>
       throw new Error(data.message || "Request failed");
     }
     return data;
-  }, label);
+  }, label, options);
 
 const renderSubmissionPreview = (container, file, dataUrl) => {
   if (!container) return;
@@ -619,7 +620,8 @@ if (loginForm) {
           username,
           password: formData.get("password"),
         },
-        "Signing in..."
+        "Signing in...",
+        { overlay: true }
       );
       clearError();
       const user = result.data.user;
@@ -735,7 +737,8 @@ if (registrationForm) {
           academicYear: formData.get("academicYear"),
           courses,
         },
-        "Submitting registration..."
+        "Submitting registration...",
+        { overlay: true }
       );
       clearError();
       flash(result.message || "Registration saved.");
@@ -795,6 +798,9 @@ const renderResults = (data) => {
 };
 
 const fetchResults = async (payload) => {
+  if (resultsBody) {
+    resultsBody.innerHTML = loadingTableRow(6, "Loading results...");
+  }
   try {
     const result = await postJson("/api/results/query", payload, "Loading results...");
     renderResults(result.data);
@@ -902,7 +908,7 @@ if (reportEntryForm) {
     };
 
     try {
-      await postJson("/api/results", payload, "Saving result...");
+      await postJson("/api/results", payload, "Saving result...", { overlay: true });
       clearError();
       flash("Student report saved.");
       reportEntryForm.reset();
@@ -1020,7 +1026,8 @@ if (submissionForm) {
             dataUrl,
             note: submissionNote ? submissionNote.value : "",
           }),
-        "Submitting file..."
+        "Submitting file...",
+        { overlay: true }
       );
       clearError();
       if (submissionForm) submissionForm.reset();
@@ -1085,7 +1092,8 @@ if (submissionTableBody) {
       try {
         await withLoading(
           () => store.reviewSubmission(id, { status: "Accepted", reviewNote: note }),
-          "Updating submission..."
+          "Updating submission...",
+          { overlay: true }
         );
         clearError();
         await renderAdminSubmissions();
@@ -1107,7 +1115,8 @@ if (submissionTableBody) {
               status: "Rejected",
               reviewNote: note
             }),
-          "Updating submission..."
+          "Updating submission...",
+          { overlay: true }
         );
         clearError();
         await renderAdminSubmissions();
@@ -1244,7 +1253,9 @@ if (dashboardStats) {
     taskForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
-        await withLoading(() => store.addTask({ text: taskInput.value }), "Adding task...");
+        await withLoading(() => store.addTask({ text: taskInput.value }), "Adding task...", {
+          overlay: true,
+        });
         taskForm.reset();
         await fetchDashboard();
         flash("Task added.");
@@ -1264,7 +1275,9 @@ if (dashboardStats) {
       if (!taskId) return;
 
       try {
-        await withLoading(() => store.toggleTask(taskId), "Updating task...");
+        await withLoading(() => store.toggleTask(taskId), "Updating task...", {
+          overlay: true,
+        });
         await fetchDashboard();
       } catch (error) {
         showError(error.message);
@@ -1282,7 +1295,9 @@ if (dashboardStats) {
       if (!window.confirm("Delete this task?")) return;
 
       try {
-        await withLoading(() => store.deleteTask(taskId), "Deleting task...");
+        await withLoading(() => store.deleteTask(taskId), "Deleting task...", {
+          overlay: true,
+        });
         await fetchDashboard();
         flash("Task deleted.");
       } catch (error) {

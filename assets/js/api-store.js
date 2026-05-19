@@ -79,8 +79,10 @@
       ...(options.headers || {}),
       ...getAuthHeaders(),
     };
+    const loadingLabel = options.loadingLabel || "";
+    const showLoading = Boolean(options.showLoading || loadingLabel);
 
-    if (loading) loading.start();
+    if (loading && showLoading) loading.start(loadingLabel);
     try {
       const response = await fetch(`${API_BASE}${path}`, {
         ...options,
@@ -93,7 +95,7 @@
       }
       return data;
     } finally {
-      if (loading) loading.stop();
+      if (loading && showLoading) loading.stop();
     }
   };
 

@@ -414,7 +414,7 @@ body {
 .loading-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.55);
+  background: rgba(15, 23, 42, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -426,7 +426,7 @@ body {
 
 .loading-overlay.show {
   opacity: 1;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .loading-card {
@@ -456,9 +456,6 @@ body {
   font-size: 14px;
 }
 
-body.is-loading {
-  overflow: hidden;
-}
 
 @keyframes loading-spin {
   to {
