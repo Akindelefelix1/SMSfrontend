@@ -1,6 +1,6 @@
 const API_BASE =
   window.__API_BASE__ ||
-  (window.location.hostname === "localhost" ? "http://localhost:8000" : "");
+  (window.location.hostname === "localhost" ? "http://localhost:8080" : "");
 const store = window.SMISStore || null;
 if (store) {
   store.ensure();
@@ -50,7 +50,8 @@ const buildNav = (role) => {
   if (!nav) return;
 
   const links = [];
-  if (role === "admin") {
+  const isAdmin = role === "admin" || role === "super_admin";
+  if (isAdmin) {
     links.push(
       { label: "Dashboard", href: "dashboard.html" },
       { label: "Students", href: "students.html" },
@@ -97,7 +98,15 @@ const applyRoleVisibility = (role) => {
       node.style.display = "none";
       return;
     }
-    node.style.display = required === role ? "" : "none";
+    if (required === role) {
+      node.style.display = "";
+      return;
+    }
+    if (required === "admin" && role === "super_admin") {
+      node.style.display = "";
+      return;
+    }
+    node.style.display = "none";
   });
 };
 
@@ -119,7 +128,8 @@ const applyRouteGuard = (role) => {
   if (!page || page === "index.html") return;
 
   if (page === "login.html" && role) {
-    window.location.href = role === "admin" ? "dashboard.html" : "student-dashboard.html";
+    const target = role === "admin" || role === "super_admin" ? "dashboard.html" : "student-dashboard.html";
+    window.location.href = target;
     return;
   }
 
@@ -130,7 +140,7 @@ const applyRouteGuard = (role) => {
     return;
   }
 
-  if (role === "admin" && studentPages.has(page)) {
+  if ((role === "admin" || role === "super_admin") && studentPages.has(page)) {
     window.location.href = "dashboard.html";
     return;
   }
@@ -174,48 +184,36 @@ const computeGpa = (rows) => {
   return (totals.quality / totals.units).toFixed(2);
 };
 
-const renderAdminActivity = () => {
+const escapeHtml = (value) =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
+const formatBytes = (value) => {
+  const size = Number(value || 0);
+  if (!size || Number.isNaN(size)) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(units.length - 1, Math.floor(Math.log(size) / Math.log(1024)));
+  const scaled = size / Math.pow(1024, index);
+  return `${scaled.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+};
+
+const renderAdminActivity = async () => {
   const list = document.getElementById("adminActivityList");
-  if (!list || !store) return;
+  if (!list) return;
 
-  const data = store.getAll();
-  const items = [];
-  const latestStudent = data.students[data.students.length - 1];
-  if (latestStudent) {
-    items.push(`Student added: ${latestStudent.name} (${latestStudent.studentNo})`);
+  try {
+    const result = await getJson("/api/admin/activity");
+    const items = Array.isArray(result.data) ? result.data : [];
+    list.innerHTML = items.length
+      ? items.map((item) => `<li>${item}</li>`).join("")
+      : '<li class="empty-state">No recent activity yet.</li>';
+  } catch (_err) {
+    list.innerHTML = '<li class="empty-state">No recent activity yet.</li>';
   }
-
-  const latestUser = data.users[data.users.length - 1];
-  if (latestUser) {
-    items.push(`User added: ${latestUser.name} (${latestUser.role})`);
-  }
-
-  const latestCourse = data.courses[data.courses.length - 1];
-  if (latestCourse) {
-    items.push(`Course added: ${latestCourse.code} (${latestCourse.title})`);
-  }
-  const latestRegistration = data.registrations[0];
-  if (latestRegistration) {
-    const studentName = store.withStudentName(latestRegistration.studentNo, data.students);
-    items.push(
-      `New registration: ${studentName} (${latestRegistration.studentNo})`
-    );
-  }
-
-  const latestResult = data.results[data.results.length - 1];
-  if (latestResult) {
-    const studentName = store.withStudentName(latestResult.studentNo, data.students);
-    items.push(`Result added: ${latestResult.course} for ${studentName}`);
-  }
-
-  const recentTask = Array.isArray(data.tasks) ? data.tasks[0] : null;
-  if (recentTask && recentTask.text) {
-    items.push(`Task created: ${recentTask.text}`);
-  }
-
-  list.innerHTML = items.length
-    ? items.map((item) => `<li>${item}</li>`).join("")
-    : '<li class="empty-state">No recent activity yet.</li>';
 };
 
 const initAdminSearch = () => {
@@ -244,7 +242,7 @@ const renderSystemStatus = () => {
   const systemTime = document.getElementById("systemTimestamp");
 
   if (dataMode) {
-    dataMode.textContent = store ? "Local Offline" : "Backend";
+    dataMode.textContent = "Backend API";
   }
   if (onlineStatus) {
     onlineStatus.textContent = navigator.onLine ? "Online" : "Offline";
@@ -254,14 +252,24 @@ const renderSystemStatus = () => {
   }
 };
 
-const renderStudentDashboard = () => {
+const renderStudentDashboard = async () => {
   const root = document.getElementById("studentDashboard");
-  if (!root || !store) return;
+  if (!root) return;
 
   const session = getSession();
   const studentNo = session ? String(session.username || "") : "";
-  const data = store.getAll();
-  const student = data.students.find((item) => item.studentNo === studentNo);
+
+  let payload;
+  try {
+    const result = await getJson("/api/students/me/dashboard");
+    payload = result.data;
+  } catch (_err) {
+    return;
+  }
+
+  const student = payload.student;
+  const registrations = payload.registrations || [];
+  const results = payload.results || [];
 
   const setText = (id, value) => {
     const node = document.getElementById(id);
@@ -274,29 +282,15 @@ const renderStudentDashboard = () => {
   setText("studentLevel", student ? student.level : "—");
   setText("studentStatus", student ? student.status : "—");
 
-  const registrations = data.registrations.filter((item) => item.studentNo === studentNo);
-  const results = data.results.filter((item) => item.studentNo === studentNo);
   setText("registrationCount", String(registrations.length));
   setText("resultsCount", String(results.length));
-  setText("studentGpa", computeGpa(results));
-  setText("studentCgpa", computeGpa(results));
+  setText("studentGpa", payload.gpa || "0.00");
+  setText("studentCgpa", payload.cgpa || "0.00");
 
-  const latestRegistration = registrations[0];
+  const latestRegistration = payload.latestRegistration;
   if (latestRegistration) {
-    const courseCodes = latestRegistration.courses.map((course) => String(course).split(" - ")[0]);
-    const totalUnits = courseCodes.reduce((total, code) => {
-      const match = data.courses.find((course) => course.code === code);
-      return total + (match ? Number(match.units) : 0);
-    }, 0);
-    setText("registeredUnits", String(totalUnits));
-
-    const semesterResults = results.filter(
-      (row) =>
-        row.academicYear === latestRegistration.academicYear &&
-        row.semester === latestRegistration.semester
-    );
-    const pending = Math.max(0, courseCodes.length - semesterResults.length);
-    setText("pendingResults", String(pending));
+    setText("registeredUnits", String(payload.registeredUnits || 0));
+    setText("pendingResults", String(payload.pendingResults || 0));
   } else {
     setText("registeredUnits", "0");
     setText("pendingResults", "0");
@@ -325,14 +319,10 @@ const renderStudentDashboard = () => {
 
   const recentResultsList = document.getElementById("recentResultsList");
   if (recentResultsList) {
-    if (results.length) {
-      const recent = results.slice(-3).reverse();
-      recentResultsList.innerHTML = recent
-        .map((row) => `<li>${row.course} · ${row.total} (${row.grade})</li>`)
-        .join("");
-    } else {
-      recentResultsList.innerHTML = '<li class="empty-state">No results published yet.</li>';
-    }
+    const recent = Array.isArray(payload.latestResults) ? payload.latestResults : [];
+    recentResultsList.innerHTML = recent.length
+      ? recent.map((row) => `<li>${row.course} · ${row.total} (${row.grade})</li>`).join("")
+      : '<li class="empty-state">No results published yet.</li>';
   }
 
   const trendList = document.getElementById("gpaTrendList");
@@ -390,31 +380,144 @@ const flash = (message) => {
   }, 2000);
 };
 
+const getAuthHeaders = () => {
+  const session = getSession();
+  if (!session || !session.token) return {};
+  return { Authorization: `Bearer ${session.token}` };
+};
+
 const postJson = async (path, payload) => {
   const response = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify(payload || {}),
   });
-  const data = await response.json();
-  if (!response.ok) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.status === "error") {
     throw new Error(data.message || "Request failed");
   }
   return data;
 };
 
-const postJsonWithFallback = async (path, payload, fallbackFn, fallbackMessage) => {
-  try {
-    return await postJson(path, payload);
-  } catch (err) {
-    if (!store || !fallbackFn) {
-      throw err;
-    }
-    const data = fallbackFn(payload);
-    return {
-      message: fallbackMessage,
-      data,
-    };
+const getJson = async (path) => {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { ...getAuthHeaders() },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.status === "error") {
+    throw new Error(data.message || "Request failed");
+  }
+  return data;
+};
+
+const renderSubmissionPreview = (container, file, dataUrl) => {
+  if (!container) return;
+  if (!file) {
+    container.innerHTML = '<p class="muted">No file selected yet.</p>';
+    return;
+  }
+
+  const meta = `
+    <div>
+      <strong>${escapeHtml(file.name)}</strong>
+      <div class="muted">${escapeHtml(file.type || "Unknown type")} · ${formatBytes(file.size)}</div>
+    </div>`;
+
+  if (dataUrl && file.type.startsWith("image/")) {
+    container.innerHTML = `${meta}<img src="${dataUrl}" alt="File preview" />`;
+    return;
+  }
+
+  if (dataUrl && file.type === "application/pdf") {
+    container.innerHTML = `${meta}<iframe src="${dataUrl}" title="PDF preview"></iframe>`;
+    return;
+  }
+
+  container.innerHTML = `${meta}<p class="muted">Preview not available for this file type.</p>`;
+};
+
+const renderStudentSubmissions = async () => {
+  const list = document.getElementById("submissionList");
+  if (!list || !store) return;
+  const session = getSession();
+  const studentNo = session ? String(session.username || "").trim() : "";
+  if (!studentNo) {
+    list.innerHTML = '<li class="empty-state">Log in as a student to view submissions.</li>';
+    return;
+  }
+
+  const rows = await store.getStudentSubmissions();
+  list.innerHTML = rows.length
+    ? rows
+        .map((item) => {
+          const statusClass = `status-${String(item.status || "pending").toLowerCase()}`;
+          const reviewNote = item.reviewNote
+            ? `<div class="muted">Admin note: ${escapeHtml(item.reviewNote)}</div>`
+            : "";
+          const reviewedAt = item.reviewedAt
+            ? `<div class="muted">Reviewed ${formatSessionDate(item.reviewedAt)}</div>`
+            : "";
+          return `
+            <li>
+              <div class="submission-row">
+                <div>
+                  <strong>${escapeHtml(item.fileName)}</strong>
+                  <div class="muted">${escapeHtml(item.fileType)} · ${formatBytes(item.fileSize)}</div>
+                  <div class="muted">Submitted ${formatSessionDate(item.submittedAt)}</div>
+                  ${reviewedAt}
+                  ${reviewNote}
+                </div>
+                <span class="status-badge ${statusClass}">${escapeHtml(item.status || "Pending")}</span>
+              </div>
+            </li>`;
+        })
+        .join("")
+    : '<li class="empty-state">No submissions yet.</li>';
+};
+
+const renderAdminSubmissions = async () => {
+  const body = document.getElementById("submissionTableBody");
+  const empty = document.getElementById("submissionEmpty");
+  const filter = document.getElementById("submissionStatusFilter");
+  if (!body || !store) return;
+
+  const selected = filter ? String(filter.value || "all").toLowerCase() : "all";
+  const rows = await store.getSubmissions(selected === "all" ? "" : selected);
+
+  body.innerHTML = rows
+    .map((item) => {
+      const studentNo = item.student ? item.student.studentNo : item.studentNo;
+      const statusClass = `status-${String(item.status || "pending").toLowerCase()}`;
+      const reviewNote = item.reviewNote
+        ? `<div class="muted">Review: ${escapeHtml(item.reviewNote)}</div>`
+        : "";
+      return `
+        <tr>
+          <td>${escapeHtml(studentNo || "-")}</td>
+          <td>
+            <div><strong>${escapeHtml(item.fileName)}</strong></div>
+            <div class="muted">${escapeHtml(item.fileType)} · ${formatBytes(item.fileSize)}</div>
+            ${item.note ? `<div class="muted">Note: ${escapeHtml(item.note)}</div>` : ""}
+            ${reviewNote}
+          </td>
+          <td>${formatSessionDate(item.submittedAt)}</td>
+          <td><span class="status-badge ${statusClass}">${escapeHtml(item.status || "Pending")}</span></td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-outline btn-sm" type="button" data-submission-preview="${item.id}">Preview</button>
+              <button class="btn btn-sm" type="button" data-submission-accept="${item.id}">Accept</button>
+              <button class="btn btn-outline btn-sm btn-danger" type="button" data-submission-reject="${item.id}">Reject</button>
+            </div>
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  if (empty) {
+    empty.style.display = rows.length ? "none" : "block";
   }
 };
 
@@ -424,27 +527,28 @@ if (loginForm) {
     event.preventDefault();
     const formData = new FormData(loginForm);
     const username = String(formData.get("username") || "").trim();
-    const role = resolveRole(username);
-    if (!role) {
-      flash("Use an admin* username or a student number to continue.");
-      return;
-    }
     try {
-      const result = await postJson("/api/login.php", {
+      const result = await postJson("/api/auth/login", {
         username,
         password: formData.get("password"),
       });
+      const user = result.data.user;
+      setSession({
+        token: result.data.token,
+        username: user.username,
+        role: user.role,
+        name: user.name,
+        studentNo: user.studentNo,
+        lastLogin: new Date().toISOString(),
+      });
       flash(result.message);
+      const target = user.role === "admin" || user.role === "super_admin"
+        ? "dashboard.html"
+        : "student-dashboard.html";
+      window.location.href = target;
     } catch (err) {
-      if (store) {
-        flash("Backend unavailable. Login allowed in local testing mode.");
-      } else {
-        flash(err.message);
-      }
+      flash(err.message);
     }
-
-    setSession({ username, role, lastLogin: new Date().toISOString() });
-    window.location.href = role === "admin" ? "dashboard.html" : "student-dashboard.html";
   });
 }
 
@@ -455,11 +559,11 @@ if (registrationForm) {
   const registrationDepartment = document.getElementById("registrationDepartment");
   const registrationStudentNo = document.getElementById("registrationStudentNo");
 
-  const populateRegistrationStudents = () => {
+  const populateRegistrationStudents = async () => {
     if (!registrationDepartment || !registrationStudentNo || !store) return;
     const selectedDepartment = registrationDepartment.value;
     const students = selectedDepartment
-      ? store.getStudentsByDepartment(selectedDepartment)
+      ? await store.getStudentsByDepartment(selectedDepartment)
       : [];
     registrationStudentNo.innerHTML =
       '<option value="">Select student</option>' +
@@ -472,26 +576,44 @@ if (registrationForm) {
   };
 
   if (registrationDepartment && store) {
-    const departments = store.getDepartments();
-    registrationDepartment.innerHTML =
-      '<option value="">Select department</option>' +
-      departments
-        .map((department) => `<option value="${department.name}">${department.name}</option>`)
-        .join("");
-    registrationDepartment.addEventListener("change", populateRegistrationStudents);
-    populateRegistrationStudents();
+    store.getDepartments().then((departments) => {
+      registrationDepartment.innerHTML =
+        '<option value="">Select department</option>' +
+        departments
+          .map((department) => `<option value="${department.name}">${department.name}</option>`)
+          .join("");
+      registrationDepartment.addEventListener("change", populateRegistrationStudents);
+      populateRegistrationStudents();
+    });
+  }
+
+  const session = getSession();
+  if (session && session.role === "student" && store && registrationDepartment) {
+    store.getStudentsByDepartment("").then((students) => {
+      const me = students[0];
+      if (!me) return;
+      registrationDepartment.value = me.department?.name || me.department || "";
+      registrationDepartment.setAttribute("disabled", "disabled");
+      populateRegistrationStudents().then(() => {
+        if (registrationStudentNo) {
+          registrationStudentNo.value = me.studentNo;
+          registrationStudentNo.setAttribute("disabled", "disabled");
+        }
+      });
+    });
   }
 
   if (checklist && store) {
-    const localCourses = store.getCourseOptions();
-    if (localCourses.length) {
-      checklist.innerHTML = localCourses
-        .map(
-          (course) =>
-            `<label><input type="checkbox" data-course="${course.label}" /> ${course.label}</label>`
-        )
-        .join("");
-    }
+    store.getCourseOptions().then((courses) => {
+      if (courses.length) {
+        checklist.innerHTML = courses
+          .map(
+            (course) =>
+              `<label><input type="checkbox" data-course="${course.label}" /> ${course.label}</label>`
+          )
+          .join("");
+      }
+    });
   }
 
   if (checklist && selectedCoursesList) {
@@ -513,19 +635,14 @@ if (registrationForm) {
     ).map((input) => input.dataset.course);
 
     try {
-      const result = await postJsonWithFallback(
-        "/api/registration.php",
-        {
-          studentNo: formData.get("studentNo"),
-          regNo: formData.get("regNo"),
-          semester: formData.get("semester"),
-          academicYear: formData.get("academicYear"),
-          courses,
-        },
-        (payload) => store.addRegistration(payload),
-        "Registration saved locally (offline mode)."
-      );
-      flash(result.message);
+      const result = await postJson("/api/registrations", {
+        studentNo: formData.get("studentNo"),
+        regNo: formData.get("regNo"),
+        semester: formData.get("semester"),
+        academicYear: formData.get("academicYear"),
+        courses,
+      });
+      flash(result.message || "Registration saved.");
     } catch (err) {
       flash(err.message);
     }
@@ -582,24 +699,16 @@ const renderResults = (data) => {
 
 const fetchResults = async (payload) => {
   try {
-    const result = await postJson("/api/results.php", payload);
+    const result = await postJson("/api/results/query", payload);
     renderResults(result.data);
-    flash(result.message);
   } catch (err) {
-    if (store) {
-      const localData = store.queryResults(payload);
-      renderResults(localData);
-      flash("Showing local offline results.");
-    } else {
-      flash(err.message);
-    }
+    flash(err.message);
   }
 };
 
-const populateStudentDropdowns = () => {
+const populateStudentDropdowns = async () => {
   if (!store) return;
-  const allData = store.getAll();
-  const students = Array.isArray(allData.students) ? allData.students : [];
+  const students = await store.getStudentsByDepartment("");
   const options =
     '<option value="">Select student</option>' +
     students
@@ -609,24 +718,19 @@ const populateStudentDropdowns = () => {
       )
       .join("");
 
-  if (reportStudentNo) {
-    reportStudentNo.innerHTML = options;
-  }
-
-  if (resultsStudentNo) {
-    resultsStudentNo.innerHTML = options;
-  }
+  if (reportStudentNo) reportStudentNo.innerHTML = options;
+  if (resultsStudentNo) resultsStudentNo.innerHTML = options;
 };
 
 populateStudentDropdowns();
 
-const refreshReportCourseDropdown = () => {
+const refreshReportCourseDropdown = async () => {
   if (!store || !reportCourse) return;
 
   const studentNo = reportStudentNo ? reportStudentNo.value : "";
   const academicYear = reportAcademicYear ? reportAcademicYear.value : "";
   const semester = reportSemester ? reportSemester.value : "";
-  const registered = store.getRegisteredCourses({ studentNo, academicYear, semester });
+  const registered = await store.getRegisteredCourses({ studentNo, academicYear, semester });
 
   reportCourse.innerHTML =
     '<option value="">Select registered course</option>' +
@@ -699,14 +803,8 @@ if (reportEntryForm) {
     };
 
     try {
-      await postJsonWithFallback(
-        "/api/results-create.php",
-        payload,
-        (localPayload) => store.addResult(localPayload),
-        "Student report saved locally."
-      );
-
-      flash("Student report saved locally.");
+      await postJson("/api/results", payload);
+      flash("Student report saved.");
       reportEntryForm.reset();
 
       resultsPage = 1;
@@ -721,7 +819,7 @@ if (reportEntryForm) {
       };
 
       await fetchResults(lastResultsPayload);
-      refreshReportCourseDropdown();
+      await refreshReportCourseDropdown();
       syncReportTotal();
     } catch (err) {
       flash(err.message);
@@ -759,6 +857,156 @@ if (resultsPrev) {
   });
 }
 
+const submissionForm = document.getElementById("submissionForm");
+const submissionFile = document.getElementById("submissionFile");
+const submissionPreview = document.getElementById("submissionPreview");
+const submissionNote = document.getElementById("submissionNote");
+
+if (submissionFile) {
+  submissionFile.addEventListener("change", () => {
+    const file = submissionFile.files && submissionFile.files[0];
+    if (!file) {
+      if (submissionForm) submissionForm.dataset.dataUrl = "";
+      renderSubmissionPreview(submissionPreview, null, "");
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      flash("Please upload files under 2 MB.");
+      submissionFile.value = "";
+      if (submissionForm) submissionForm.dataset.dataUrl = "";
+      renderSubmissionPreview(submissionPreview, null, "");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (submissionForm) {
+        submissionForm.dataset.dataUrl = String(reader.result || "");
+      }
+      renderSubmissionPreview(submissionPreview, file, String(reader.result || ""));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+if (submissionForm) {
+  submissionForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const session = getSession();
+    const studentNo = session ? String(session.username || "").trim() : "";
+    if (!studentNo) {
+      flash("Log in as a student to submit files.");
+      return;
+    }
+
+    const file = submissionFile && submissionFile.files ? submissionFile.files[0] : null;
+    const dataUrl = String(submissionForm.dataset.dataUrl || "");
+    if (!file || !dataUrl) {
+      flash("Please select a file to submit.");
+      return;
+    }
+
+    try {
+      await store.addSubmission({
+        fileName: file.name,
+        fileType: file.type || "application/octet-stream",
+        fileSize: file.size,
+        dataUrl,
+        note: submissionNote ? submissionNote.value : "",
+      });
+      if (submissionForm) submissionForm.reset();
+      submissionForm.dataset.dataUrl = "";
+      renderSubmissionPreview(submissionPreview, null, "");
+      await renderStudentSubmissions();
+      await renderAdminSubmissions();
+      flash("File submitted for admin review.");
+    } catch (err) {
+      flash(err.message);
+    }
+  });
+}
+
+const submissionTableBody = document.getElementById("submissionTableBody");
+const submissionStatusFilter = document.getElementById("submissionStatusFilter");
+
+if (submissionStatusFilter) {
+  submissionStatusFilter.addEventListener("change", () => {
+    renderAdminSubmissions();
+  });
+}
+
+if (submissionTableBody) {
+  submissionTableBody.addEventListener("click", async (event) => {
+    const previewBtn = event.target.closest("[data-submission-preview]");
+    const acceptBtn = event.target.closest("[data-submission-accept]");
+    const rejectBtn = event.target.closest("[data-submission-reject]");
+    if (!store) return;
+
+    const id = previewBtn
+      ? previewBtn.getAttribute("data-submission-preview")
+      : acceptBtn
+      ? acceptBtn.getAttribute("data-submission-accept")
+      : rejectBtn
+      ? rejectBtn.getAttribute("data-submission-reject")
+      : "";
+    if (!id) return;
+
+    const submissions = await store.getSubmissions();
+    const submission = submissions.find((item) => item.id === id);
+    if (!submission) {
+      flash("Submission not found.");
+      return;
+    }
+
+    if (previewBtn) {
+      if (!submission.dataUrl) {
+        flash("Preview not available for this submission.");
+        return;
+      }
+      window.open(submission.dataUrl, "_blank", "noopener");
+      return;
+    }
+
+    const session = getSession();
+    const reviewer = session ? String(session.username || "Admin") : "Admin";
+    if (acceptBtn) {
+      const note = window.prompt("Approval note (optional)", "");
+      if (note === null) return;
+      try {
+        await store.reviewSubmission(id, { status: "Accepted", reviewNote: note });
+        await renderAdminSubmissions();
+        await renderStudentSubmissions();
+        flash("Submission accepted.");
+      } catch (err) {
+        flash(err.message);
+      }
+    }
+
+    if (rejectBtn) {
+      const note = window.prompt("Reason for rejection (optional)", "");
+      if (note === null) return;
+      try {
+        await store.reviewSubmission(id, {
+          status: "Rejected",
+          reviewNote: note
+        });
+        await renderAdminSubmissions();
+        await renderStudentSubmissions();
+        flash("Submission rejected.");
+      } catch (err) {
+        flash(err.message);
+      }
+    }
+  });
+}
+
+renderSubmissionPreview(submissionPreview, null, "");
+renderStudentSubmissions();
+renderAdminSubmissions();
+
 if (resultsNext) {
   resultsNext.addEventListener("click", () => {
     if (!lastResultsPayload) return;
@@ -772,7 +1020,6 @@ const dashboardStats = document.getElementById("statStudents");
 if (dashboardStats) {
   let recentPage = 1;
   const recentLimit = 3;
-  let usingLocalData = false;
   const taskForm = document.getElementById("taskForm");
   const taskInput = document.getElementById("taskInput");
   const taskList = document.getElementById("taskList");
@@ -845,65 +1092,28 @@ if (dashboardStats) {
   const fetchDashboard = async () => {
     const recentStudentNo = document.getElementById("recentStudentNo");
     const recentCourseCode = document.getElementById("recentCourseCode");
-    const params = new URLSearchParams({
-      recent_page: recentPage,
-      recent_limit: recentLimit,
-    });
-    if (recentStudentNo && recentStudentNo.value.trim() !== "") {
-      params.set("recent_student_no", recentStudentNo.value.trim());
-    }
-    if (recentCourseCode && recentCourseCode.value.trim() !== "") {
-      params.set("recent_course_code", recentCourseCode.value.trim());
-    }
-
     try {
-      const res = await fetch(`${API_BASE}/api/dashboard.php?${params.toString()}`);
-      const result = await res.json();
-      if (result.status !== "ok") {
-        throw new Error("Invalid dashboard response");
-      }
-      renderDashboard(result.data);
-    } catch (_err) {
-      if (!store) {
-        flash("Dashboard data unavailable (backend not running).");
-        return;
-      }
-
-      const localData = store.getDashboardData({
+      const data = await store.getDashboardData({
         page: recentPage,
         limit: recentLimit,
         studentNo: recentStudentNo ? recentStudentNo.value.trim() : "",
         courseCode: recentCourseCode ? recentCourseCode.value.trim() : "",
       });
-      renderDashboard(localData);
-      if (!usingLocalData) {
-        usingLocalData = true;
-        flash("Dashboard switched to local offline data.");
-      }
+      renderDashboard(data);
+    } catch (err) {
+      flash(err.message || "Dashboard unavailable.");
     }
   };
 
   fetchDashboard();
 
   if (taskForm && taskInput) {
-    taskForm.addEventListener("submit", (event) => {
+    taskForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (!store) {
-        flash("Task storage unavailable.");
-        return;
-      }
-
       try {
-        store.addTask({ text: taskInput.value });
+        await store.addTask({ text: taskInput.value });
         taskForm.reset();
-        const localData = store.getDashboardData({
-          page: recentPage,
-          limit: recentLimit,
-          studentNo: document.getElementById("recentStudentNo")?.value.trim() || "",
-          courseCode: document.getElementById("recentCourseCode")?.value.trim() || "",
-        });
-        renderDashboard(localData);
-        usingLocalData = true;
+        await fetchDashboard();
         flash("Task added.");
       } catch (error) {
         flash(error.message);
@@ -912,7 +1122,7 @@ if (dashboardStats) {
   }
 
   if (taskList) {
-    taskList.addEventListener("change", (event) => {
+    taskList.addEventListener("change", async (event) => {
       const toggleInput = event.target.closest("[data-task-toggle]");
       if (!toggleInput || !store) return;
 
@@ -920,20 +1130,14 @@ if (dashboardStats) {
       if (!taskId) return;
 
       try {
-        store.toggleTask(taskId);
-        const localData = store.getDashboardData({
-          page: recentPage,
-          limit: recentLimit,
-          studentNo: document.getElementById("recentStudentNo")?.value.trim() || "",
-          courseCode: document.getElementById("recentCourseCode")?.value.trim() || "",
-        });
-        renderDashboard(localData);
+        await store.toggleTask(taskId);
+        await fetchDashboard();
       } catch (error) {
         flash(error.message);
       }
     });
 
-    taskList.addEventListener("click", (event) => {
+    taskList.addEventListener("click", async (event) => {
       const deleteBtn = event.target.closest("[data-task-delete]");
       if (!deleteBtn || !store) return;
 
@@ -943,14 +1147,8 @@ if (dashboardStats) {
       if (!window.confirm("Delete this task?")) return;
 
       try {
-        store.deleteTask(taskId);
-        const localData = store.getDashboardData({
-          page: recentPage,
-          limit: recentLimit,
-          studentNo: document.getElementById("recentStudentNo")?.value.trim() || "",
-          courseCode: document.getElementById("recentCourseCode")?.value.trim() || "",
-        });
-        renderDashboard(localData);
+        await store.deleteTask(taskId);
+        await fetchDashboard();
         flash("Task deleted.");
       } catch (error) {
         flash(error.message);

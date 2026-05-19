@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SMS - Student Dashboard</title>
+  <script src="assets/js/config.js"></script>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body class="page">
@@ -65,12 +66,36 @@
         </div>
       </div>
       <div class="card">
+        <h3>File Submission</h3>
+        <p class="muted">Submit documents for admin review.</p>
+        <form id="submissionForm" class="form" style="margin-top: 12px;">
+          <label>
+            <span>Select File</span>
+            <input type="file" id="submissionFile" name="submissionFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" required />
+          </label>
+          <label>
+            <span>Note (Optional)</span>
+            <input type="text" id="submissionNote" name="note" placeholder="Short description" />
+          </label>
+          <div id="submissionPreview" class="file-preview"></div>
+          <div class="actions" style="margin-top: 12px;">
+            <button class="btn" type="submit">Submit File</button>
+          </div>
+        </form>
+      </div>
+      <div class="card">
         <h3>Profile</h3>
         <ul class="meta-list">
           <li><span>Student No</span><strong id="studentNo">—</strong></li>
           <li><span>Department</span><strong id="studentDepartment">—</strong></li>
           <li><span>Level</span><strong id="studentLevel">—</strong></li>
           <li><span>Status</span><strong id="studentStatus">—</strong></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>My Submissions</h3>
+        <ul class="list" id="submissionList">
+          <li class="empty-state">No submissions yet.</li>
         </ul>
       </div>
       <div class="card">
@@ -110,7 +135,7 @@
     </section>
   </main>
 
-  <script src="assets/js/local-store.js"></script>
+  <script src="assets/js/api-store.js"></script>
   <script src="assets/js/pages.js"></script>
 </body>
 </html>

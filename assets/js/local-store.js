@@ -76,7 +76,8 @@
         total: 70,
         grade: "B"
       }
-    ]
+    ],
+    submissions: []
   };
 
   const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -139,7 +140,8 @@
         courses: Array.isArray(parsed.courses) ? parsed.courses : [],
         tasks: normalizedTasks,
         registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
-        results: Array.isArray(parsed.results) ? parsed.results : []
+        results: Array.isArray(parsed.results) ? parsed.results : [],
+        submissions: Array.isArray(parsed.submissions) ? parsed.submissions : []
       };
     } catch (error) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
@@ -586,6 +588,79 @@
     return data.results;
   };
 
+  const addSubmission = (payload) => {
+    const data = read();
+    const studentNo = String(payload.studentNo || "").trim();
+    const fileName = String(payload.fileName || "").trim();
+    const fileType = String(payload.fileType || "").trim();
+    const fileSize = Number(payload.fileSize || 0);
+    const dataUrl = String(payload.dataUrl || "").trim();
+    const note = String(payload.note || "").trim();
+
+    if (!studentNo || !fileName || !fileType || !fileSize || !dataUrl) {
+      throw new Error("Submission fields are incomplete");
+    }
+
+    if (!Array.isArray(data.submissions)) {
+      data.submissions = [];
+    }
+
+    data.submissions.unshift({
+      id: uid("sub"),
+      studentNo,
+      fileName,
+      fileType,
+      fileSize,
+      dataUrl,
+      note,
+      status: "Pending",
+      submittedAt: new Date().toISOString(),
+      reviewedAt: "",
+      reviewer: "",
+      reviewNote: ""
+    });
+
+    write(data);
+    return data.submissions;
+  };
+
+  const reviewSubmission = (id, payload = {}) => {
+    const data = read();
+    const target = Array.isArray(data.submissions)
+      ? data.submissions.find((item) => item.id === id)
+      : null;
+    if (!target) {
+      throw new Error("Submission not found");
+    }
+
+    const status = String(payload.status || "").trim();
+    if (status !== "Accepted" && status !== "Rejected") {
+      throw new Error("Invalid review status");
+    }
+
+    target.status = status;
+    target.reviewedAt = new Date().toISOString();
+    target.reviewer = String(payload.reviewer || "Admin").trim();
+    target.reviewNote = String(payload.reviewNote || "").trim();
+
+    write(data);
+    return data.submissions;
+  };
+
+  const getSubmissions = () => {
+    const data = read();
+    return Array.isArray(data.submissions) ? data.submissions : [];
+  };
+
+  const getStudentSubmissions = (studentNo) => {
+    const data = read();
+    const target = String(studentNo || "").trim();
+    if (!target) return [];
+    return (Array.isArray(data.submissions) ? data.submissions : []).filter(
+      (item) => item.studentNo === target
+    );
+  };
+
   const addTask = (payload) => {
     const data = read();
     const text = String(payload.text || "").trim();
@@ -837,7 +912,8 @@
       courses: Array.isArray(parsed.courses) ? parsed.courses : [],
       tasks: normalizedTasks,
       registrations: Array.isArray(parsed.registrations) ? parsed.registrations : [],
-      results: Array.isArray(parsed.results) ? parsed.results : []
+      results: Array.isArray(parsed.results) ? parsed.results : [],
+      submissions: Array.isArray(parsed.submissions) ? parsed.submissions : []
     };
 
     write(normalized);
@@ -871,6 +947,10 @@
     deleteCourse,
     addRegistration,
     addResult,
+    addSubmission,
+    reviewSubmission,
+    getSubmissions,
+    getStudentSubmissions,
     addTask,
     toggleTask,
     deleteTask,

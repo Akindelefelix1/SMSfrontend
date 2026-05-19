@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SMS - Dashboard</title>
+  <script src="assets/js/config.js"></script>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body class="page">
@@ -81,6 +82,33 @@
         </div>
       </div>
       <div class="card">
+        <h3>File Submissions</h3>
+        <p class="muted">Review student uploads and approve or reject them.</p>
+        <div class="mini-form" style="margin-top: 12px;">
+          <select id="submissionStatusFilter">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>File</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="submissionTableBody"></tbody>
+          </table>
+        </div>
+        <p class="muted" id="submissionEmpty">No submissions yet.</p>
+      </div>
+      <div class="card">
         <h3>Tasks</h3>
         <form id="taskForm" class="mini-form" style="margin-bottom: 12px;">
           <input type="text" id="taskInput" placeholder="Add admin task" required />
@@ -117,7 +145,7 @@
     </section>
   </main>
 
-  <script src="assets/js/local-store.js"></script>
+  <script src="assets/js/api-store.js"></script>
   <script src="assets/js/pages.js"></script>
 </body>
 </html>

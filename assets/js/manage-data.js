@@ -12,7 +12,8 @@ const localFlash = (message) => {
 
 const store = window.SMISStore;
 if (store) {
-  store.ensure();
+  (async () => {
+    await store.ensure();
 
   const escapeHtml = (value) =>
     String(value)
@@ -35,10 +36,10 @@ if (store) {
     }
   }
 
-  const renderUsers = () => {
+  const renderUsers = async () => {
     const usersBody = document.getElementById("usersBody");
     if (!usersBody) return;
-    const data = store.getAll();
+    const data = await store.getAll();
     usersBody.innerHTML = data.users
       .map(
         (user) => `
@@ -58,10 +59,10 @@ if (store) {
       .join("");
   };
 
-  const renderStudents = () => {
+  const renderStudents = async () => {
     const studentsBody = document.getElementById("studentsBody");
     if (!studentsBody) return;
-    const data = store.getAll();
+    const data = await store.getAll();
     const filter = getStudentFilter();
     const rows = data.students.filter((student) => {
       if (!filter) return true;
@@ -95,10 +96,10 @@ if (store) {
     }
   };
 
-  const renderCourses = () => {
+  const renderCourses = async () => {
     const coursesBody = document.getElementById("coursesBody");
     if (!coursesBody) return;
-    const data = store.getAll();
+    const data = await store.getAll();
     coursesBody.innerHTML = data.courses
       .map(
         (course) => `
@@ -118,10 +119,10 @@ if (store) {
       .join("");
   };
 
-  const renderDepartments = () => {
+  const renderDepartments = async () => {
     const departmentsBody = document.getElementById("departmentsBody");
     if (!departmentsBody) return;
-    const departments = store.getDepartments();
+    const departments = await store.getDepartments();
     departmentsBody.innerHTML = departments
       .map(
         (department) => `
@@ -138,10 +139,10 @@ if (store) {
       .join("");
   };
 
-  const populateDepartmentSelects = () => {
+  const populateDepartmentSelects = async () => {
     const selects = document.querySelectorAll("select.department-select");
     if (!selects.length) return;
-    const departments = store.getDepartments();
+    const departments = await store.getDepartments();
     selects.forEach((select) => {
       const current = select.value;
       select.innerHTML =
@@ -155,12 +156,12 @@ if (store) {
     });
   };
 
-  const refreshAllTables = () => {
-    renderUsers();
-    renderStudents();
-    renderCourses();
-    renderDepartments();
-    populateDepartmentSelects();
+  const refreshAllTables = async () => {
+    await renderUsers();
+    await renderStudents();
+    await renderCourses();
+    await renderDepartments();
+    await populateDepartmentSelects();
   };
 
   if (studentFilterInput) {
@@ -182,15 +183,25 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(userForm);
       try {
-        store.addUser({
+        const suggestedUsername = formData.get("email") || formData.get("name");
+        const username = window.prompt("Username", suggestedUsername || "");
+        if (username === null) return;
+        const password = window.prompt("Temporary password");
+        if (password === null || !String(password).trim()) {
+          localFlash("Password is required.");
+          return;
+        }
+        await store.addUser({
           name: formData.get("name"),
           role: formData.get("role"),
           status: formData.get("status"),
-          email: formData.get("email")
+          email: formData.get("email"),
+          username: String(username).trim(),
+          password: String(password).trim()
         });
         userForm.reset();
-        renderUsers();
-        localFlash("User added locally.");
+        await renderUsers();
+        localFlash("User added.");
       } catch (error) {
         localFlash(error.message);
       }
@@ -203,7 +214,7 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(studentForm);
       try {
-        store.addStudent({
+        await store.addStudent({
           studentNo: formData.get("studentNo"),
           name: formData.get("name"),
           department: formData.get("department"),
@@ -211,8 +222,8 @@ if (store) {
           status: formData.get("status")
         });
         studentForm.reset();
-        refreshAllTables();
-        localFlash("Student added locally.");
+        await refreshAllTables();
+        localFlash("Student added.");
       } catch (error) {
         localFlash(error.message);
       }
@@ -225,10 +236,10 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(departmentForm);
       try {
-        store.addDepartment({ name: formData.get("name") });
+        await store.addDepartment({ name: formData.get("name") });
         departmentForm.reset();
-        refreshAllTables();
-        localFlash("Department added locally.");
+        await refreshAllTables();
+        localFlash("Department added.");
       } catch (error) {
         localFlash(error.message);
       }
@@ -241,15 +252,15 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(courseForm);
       try {
-        store.addCourse({
+        await store.addCourse({
           code: formData.get("code"),
           title: formData.get("title"),
           units: formData.get("units"),
           semester: formData.get("semester")
         });
         courseForm.reset();
-        renderCourses();
-        localFlash("Course added locally.");
+        await renderCourses();
+        localFlash("Course added.");
       } catch (error) {
         localFlash(error.message);
       }
@@ -261,7 +272,7 @@ if (store) {
     usersBody.addEventListener("click", (event) => {
       const editBtn = event.target.closest("[data-user-edit]");
       const deleteBtn = event.target.closest("[data-user-delete]");
-      const data = store.getAll();
+      const data = await store.getAll();
 
       if (editBtn) {
         const userId = editBtn.getAttribute("data-user-edit");
@@ -281,8 +292,8 @@ if (store) {
         if (email === null) return;
 
         try {
-          store.updateUser(userId, { name, role, status, email });
-          refreshAllTables();
+          await store.updateUser(userId, { name, role, status, email, username: user.username });
+          await refreshAllTables();
           localFlash("User updated.");
         } catch (error) {
           localFlash(error.message);
@@ -293,8 +304,8 @@ if (store) {
         const userId = deleteBtn.getAttribute("data-user-delete");
         if (!window.confirm("Delete this user?")) return;
         try {
-          store.deleteUser(userId);
-          refreshAllTables();
+          await store.deleteUser(userId);
+          await refreshAllTables();
           localFlash("User deleted.");
         } catch (error) {
           localFlash(error.message);
@@ -308,8 +319,8 @@ if (store) {
     studentsBody.addEventListener("click", (event) => {
       const editBtn = event.target.closest("[data-student-edit]");
       const deleteBtn = event.target.closest("[data-student-delete]");
-      const data = store.getAll();
-      const departmentNames = store.getDepartments().map((department) => department.name);
+      const data = await store.getAll();
+      const departmentNames = (await store.getDepartments()).map((department) => department.name);
 
       if (editBtn) {
         const studentId = editBtn.getAttribute("data-student-edit");
@@ -334,8 +345,8 @@ if (store) {
         if (status === null) return;
 
         try {
-          store.updateStudent(studentId, { studentNo, name, department, level, status });
-          refreshAllTables();
+          await store.updateStudent(studentId, { studentNo, name, department, level, status });
+          await refreshAllTables();
           localFlash("Student updated.");
         } catch (error) {
           localFlash(error.message);
@@ -346,8 +357,8 @@ if (store) {
         const studentId = deleteBtn.getAttribute("data-student-delete");
         if (!window.confirm("Delete this student and related records?")) return;
         try {
-          store.deleteStudent(studentId);
-          refreshAllTables();
+          await store.deleteStudent(studentId);
+          await refreshAllTables();
           localFlash("Student deleted.");
         } catch (error) {
           localFlash(error.message);
@@ -361,7 +372,7 @@ if (store) {
     departmentsBody.addEventListener("click", (event) => {
       const editBtn = event.target.closest("[data-department-edit]");
       const deleteBtn = event.target.closest("[data-department-delete]");
-      const departments = store.getDepartments();
+      const departments = await store.getDepartments();
 
       if (editBtn) {
         const departmentId = editBtn.getAttribute("data-department-edit");
@@ -375,8 +386,8 @@ if (store) {
         if (name === null) return;
 
         try {
-          store.updateDepartment(departmentId, { name });
-          refreshAllTables();
+          await store.updateDepartment(departmentId, { name });
+          await refreshAllTables();
           localFlash("Department updated.");
         } catch (error) {
           localFlash(error.message);
@@ -387,8 +398,8 @@ if (store) {
         const departmentId = deleteBtn.getAttribute("data-department-delete");
         if (!window.confirm("Delete this department?")) return;
         try {
-          store.deleteDepartment(departmentId);
-          refreshAllTables();
+          await store.deleteDepartment(departmentId);
+          await refreshAllTables();
           localFlash("Department deleted.");
         } catch (error) {
           localFlash(error.message);
@@ -402,7 +413,7 @@ if (store) {
     coursesBody.addEventListener("click", (event) => {
       const editBtn = event.target.closest("[data-course-edit]");
       const deleteBtn = event.target.closest("[data-course-delete]");
-      const data = store.getAll();
+      const data = await store.getAll();
 
       if (editBtn) {
         const courseId = editBtn.getAttribute("data-course-edit");
@@ -422,8 +433,8 @@ if (store) {
         if (semester === null) return;
 
         try {
-          store.updateCourse(courseId, { code, title, units, semester });
-          refreshAllTables();
+          await store.updateCourse(courseId, { code, title, units, semester });
+          await refreshAllTables();
           localFlash("Course updated.");
         } catch (error) {
           localFlash(error.message);
@@ -434,8 +445,8 @@ if (store) {
         const courseId = deleteBtn.getAttribute("data-course-delete");
         if (!window.confirm("Delete this course and related records?")) return;
         try {
-          store.deleteCourse(courseId);
-          refreshAllTables();
+          await store.deleteCourse(courseId);
+          await refreshAllTables();
           localFlash("Course deleted.");
         } catch (error) {
           localFlash(error.message);
@@ -448,7 +459,8 @@ if (store) {
   if (exportBtn) {
     exportBtn.addEventListener("click", () => {
       try {
-        const blob = new Blob([store.exportData()], { type: "application/json" });
+        const payload = await store.exportData();
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -471,8 +483,8 @@ if (store) {
       if (!file) return;
       try {
         const rawText = await file.text();
-        store.importData(rawText);
-        refreshAllTables();
+        await store.importData(rawText);
+        await refreshAllTables();
         localFlash("Data imported.");
       } catch (error) {
         localFlash(error.message);
@@ -485,11 +497,12 @@ if (store) {
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       if (!window.confirm("Reset all local test data to default seed?")) return;
-      store.resetData();
-      refreshAllTables();
-      localFlash("Local data reset.");
+      await store.resetData();
+      await refreshAllTables();
+      localFlash("Data reset.");
     });
   }
 
-  refreshAllTables();
+  await refreshAllTables();
+  })();
 }
