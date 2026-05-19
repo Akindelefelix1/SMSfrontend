@@ -6,6 +6,16 @@ if (store) {
   store.ensure();
 }
 
+const withLoading = async (work, label) => {
+  const loading = window.SMISLoading;
+  if (loading) loading.start(label || "Loading...");
+  try {
+    return await work();
+  } finally {
+    if (loading) loading.stop();
+  }
+};
+
 const SESSION_KEY = "sms_session_v1";
 
 const getSession = () => {
@@ -205,14 +215,18 @@ const renderAdminActivity = async () => {
   const list = document.getElementById("adminActivityList");
   if (!list) return;
 
+  list.innerHTML = loadingListItem("Loading activity...");
+
   try {
-    const result = await getJson("/api/admin/activity");
+    const result = await getJson("/api/admin/activity", "Loading activity...");
     const items = Array.isArray(result.data) ? result.data : [];
     list.innerHTML = items.length
       ? items.map((item) => `<li>${item}</li>`).join("")
       : '<li class="empty-state">No recent activity yet.</li>';
+    clearError();
   } catch (_err) {
     list.innerHTML = '<li class="empty-state">No recent activity yet.</li>';
+    showError("Unable to load recent activity.");
   }
 };
 
@@ -256,14 +270,31 @@ const renderStudentDashboard = async () => {
   const root = document.getElementById("studentDashboard");
   if (!root) return;
 
+  const registeredCoursesList = document.getElementById("registeredCoursesList");
+  if (registeredCoursesList) {
+    registeredCoursesList.innerHTML = loadingListItem("Loading courses...");
+  }
+
+  const recentResultsList = document.getElementById("recentResultsList");
+  if (recentResultsList) {
+    recentResultsList.innerHTML = loadingListItem("Loading results...");
+  }
+
+  const trendList = document.getElementById("gpaTrendList");
+  if (trendList) {
+    trendList.innerHTML = loadingListItem("Loading GPA trend...");
+  }
+
   const session = getSession();
   const studentNo = session ? String(session.username || "") : "";
 
   let payload;
   try {
-    const result = await getJson("/api/students/me/dashboard");
+    const result = await getJson("/api/students/me/dashboard", "Loading dashboard...");
     payload = result.data;
+    clearError();
   } catch (_err) {
+    showError("Unable to load your dashboard. Please refresh.");
     return;
   }
 
@@ -282,8 +313,8 @@ const renderStudentDashboard = async () => {
   setText("studentLevel", student ? student.level : "—");
   setText("studentStatus", student ? student.status : "—");
 
-  setText("registrationCount", String(registrations.length));
-  setText("resultsCount", String(results.length));
+  setText("registrationCount", String(registrations.length || 0));
+  setText("resultsCount", String(results.length || 0));
   setText("studentGpa", payload.gpa || "0.00");
   setText("studentCgpa", payload.cgpa || "0.00");
 
@@ -305,7 +336,6 @@ const renderStudentDashboard = async () => {
     }
   }
 
-  const registeredCoursesList = document.getElementById("registeredCoursesList");
   if (registeredCoursesList) {
     if (latestRegistration && latestRegistration.courses.length) {
       registeredCoursesList.innerHTML = latestRegistration.courses
@@ -317,7 +347,6 @@ const renderStudentDashboard = async () => {
     }
   }
 
-  const recentResultsList = document.getElementById("recentResultsList");
   if (recentResultsList) {
     const recent = Array.isArray(payload.latestResults) ? payload.latestResults : [];
     recentResultsList.innerHTML = recent.length
@@ -325,7 +354,6 @@ const renderStudentDashboard = async () => {
       : '<li class="empty-state">No results published yet.</li>';
   }
 
-  const trendList = document.getElementById("gpaTrendList");
   if (trendList) {
     const byTerm = new Map();
     results.forEach((row) => {
@@ -380,38 +408,88 @@ const flash = (message) => {
   }, 2000);
 };
 
+let errorTimer = null;
+
+const ensureErrorBanner = () => {
+  let banner = document.getElementById("errorBanner");
+  if (banner) return banner;
+
+  const container = document.querySelector("main.container");
+  if (!container) return null;
+
+  banner = document.createElement("div");
+  banner.id = "errorBanner";
+  banner.className = "error-banner";
+  banner.style.display = "none";
+  container.prepend(banner);
+  return banner;
+};
+
+const showError = (message) => {
+  if (!message) return;
+  const banner = ensureErrorBanner();
+  if (!banner) return;
+  banner.textContent = String(message);
+  banner.style.display = "block";
+  if (errorTimer) {
+    clearTimeout(errorTimer);
+  }
+  errorTimer = setTimeout(() => {
+    clearError();
+  }, 4500);
+};
+
+const clearError = () => {
+  const banner = document.getElementById("errorBanner");
+  if (!banner) return;
+  banner.textContent = "";
+  banner.style.display = "none";
+  if (errorTimer) {
+    clearTimeout(errorTimer);
+    errorTimer = null;
+  }
+};
+
+const loadingListItem = (label) =>
+  `<li class="loading-inline">${label || "Loading..."}</li>`;
+
+const loadingTableRow = (colSpan, label) =>
+  `<tr><td class="loading-inline" colspan="${colSpan || 1}">${label || "Loading..."}</td></tr>`;
+
 const getAuthHeaders = () => {
   const session = getSession();
   if (!session || !session.token) return {};
   return { Authorization: `Bearer ${session.token}` };
 };
 
-const postJson = async (path, payload) => {
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...getAuthHeaders(),
-    },
-    body: JSON.stringify(payload || {}),
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.status === "error") {
-    throw new Error(data.message || "Request failed");
-  }
-  return data;
-};
+const postJson = async (path, payload, label) =>
+  withLoading(async () => {
+    const response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(payload || {}),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.status === "error") {
+      throw new Error(data.message || "Request failed");
+    }
+    return data;
+  }, label);
 
-const getJson = async (path) => {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { ...getAuthHeaders() },
-  });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data.status === "error") {
-    throw new Error(data.message || "Request failed");
-  }
-  return data;
-};
+const getJson = async (path, label) =>
+  withLoading(async () => {
+    const response = await fetch(`${API_BASE}${path}`, {
+      headers: { ...getAuthHeaders() },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.status === "error") {
+      throw new Error(data.message || "Request failed");
+    }
+    return data;
+  }, label);
 
 const renderSubmissionPreview = (container, file, dataUrl) => {
   if (!container) return;
@@ -449,7 +527,8 @@ const renderStudentSubmissions = async () => {
     return;
   }
 
-  const rows = await store.getStudentSubmissions();
+  list.innerHTML = loadingListItem("Loading submissions...");
+  const rows = await withLoading(() => store.getStudentSubmissions(), "Loading submissions...");
   list.innerHTML = rows.length
     ? rows
         .map((item) => {
@@ -484,8 +563,14 @@ const renderAdminSubmissions = async () => {
   const filter = document.getElementById("submissionStatusFilter");
   if (!body || !store) return;
 
+  body.innerHTML = loadingTableRow(5, "Loading submissions...");
+  if (empty) empty.style.display = "none";
+
   const selected = filter ? String(filter.value || "all").toLowerCase() : "all";
-  const rows = await store.getSubmissions(selected === "all" ? "" : selected);
+  const rows = await withLoading(
+    () => store.getSubmissions(selected === "all" ? "" : selected),
+    "Loading submissions..."
+  );
 
   body.innerHTML = rows
     .map((item) => {
@@ -528,10 +613,15 @@ if (loginForm) {
     const formData = new FormData(loginForm);
     const username = String(formData.get("username") || "").trim();
     try {
-      const result = await postJson("/api/auth/login", {
-        username,
-        password: formData.get("password"),
-      });
+      const result = await postJson(
+        "/api/auth/login",
+        {
+          username,
+          password: formData.get("password"),
+        },
+        "Signing in..."
+      );
+      clearError();
       const user = result.data.user;
       setSession({
         token: result.data.token,
@@ -547,6 +637,7 @@ if (loginForm) {
         : "student-dashboard.html";
       window.location.href = target;
     } catch (err) {
+      showError(err.message);
       flash(err.message);
     }
   });
@@ -635,15 +726,21 @@ if (registrationForm) {
     ).map((input) => input.dataset.course);
 
     try {
-      const result = await postJson("/api/registrations", {
-        studentNo: formData.get("studentNo"),
-        regNo: formData.get("regNo"),
-        semester: formData.get("semester"),
-        academicYear: formData.get("academicYear"),
-        courses,
-      });
+      const result = await postJson(
+        "/api/registrations",
+        {
+          studentNo: formData.get("studentNo"),
+          regNo: formData.get("regNo"),
+          semester: formData.get("semester"),
+          academicYear: formData.get("academicYear"),
+          courses,
+        },
+        "Submitting registration..."
+      );
+      clearError();
       flash(result.message || "Registration saved.");
     } catch (err) {
+      showError(err.message);
       flash(err.message);
     }
   });
@@ -699,9 +796,11 @@ const renderResults = (data) => {
 
 const fetchResults = async (payload) => {
   try {
-    const result = await postJson("/api/results/query", payload);
+    const result = await postJson("/api/results/query", payload, "Loading results...");
     renderResults(result.data);
+    clearError();
   } catch (err) {
+    showError(err.message);
     flash(err.message);
   }
 };
@@ -803,7 +902,8 @@ if (reportEntryForm) {
     };
 
     try {
-      await postJson("/api/results", payload);
+      await postJson("/api/results", payload, "Saving result...");
+      clearError();
       flash("Student report saved.");
       reportEntryForm.reset();
 
@@ -822,6 +922,7 @@ if (reportEntryForm) {
       await refreshReportCourseDropdown();
       syncReportTotal();
     } catch (err) {
+      showError(err.message);
       flash(err.message);
     }
   });
@@ -910,13 +1011,18 @@ if (submissionForm) {
     }
 
     try {
-      await store.addSubmission({
-        fileName: file.name,
-        fileType: file.type || "application/octet-stream",
-        fileSize: file.size,
-        dataUrl,
-        note: submissionNote ? submissionNote.value : "",
-      });
+      await withLoading(
+        () =>
+          store.addSubmission({
+            fileName: file.name,
+            fileType: file.type || "application/octet-stream",
+            fileSize: file.size,
+            dataUrl,
+            note: submissionNote ? submissionNote.value : "",
+          }),
+        "Submitting file..."
+      );
+      clearError();
       if (submissionForm) submissionForm.reset();
       submissionForm.dataset.dataUrl = "";
       renderSubmissionPreview(submissionPreview, null, "");
@@ -924,6 +1030,7 @@ if (submissionForm) {
       await renderAdminSubmissions();
       flash("File submitted for admin review.");
     } catch (err) {
+      showError(err.message);
       flash(err.message);
     }
   });
@@ -976,11 +1083,16 @@ if (submissionTableBody) {
       const note = window.prompt("Approval note (optional)", "");
       if (note === null) return;
       try {
-        await store.reviewSubmission(id, { status: "Accepted", reviewNote: note });
+        await withLoading(
+          () => store.reviewSubmission(id, { status: "Accepted", reviewNote: note }),
+          "Updating submission..."
+        );
+        clearError();
         await renderAdminSubmissions();
         await renderStudentSubmissions();
         flash("Submission accepted.");
       } catch (err) {
+        showError(err.message);
         flash(err.message);
       }
     }
@@ -989,14 +1101,20 @@ if (submissionTableBody) {
       const note = window.prompt("Reason for rejection (optional)", "");
       if (note === null) return;
       try {
-        await store.reviewSubmission(id, {
-          status: "Rejected",
-          reviewNote: note
-        });
+        await withLoading(
+          () =>
+            store.reviewSubmission(id, {
+              status: "Rejected",
+              reviewNote: note
+            }),
+          "Updating submission..."
+        );
+        clearError();
         await renderAdminSubmissions();
         await renderStudentSubmissions();
         flash("Submission rejected.");
       } catch (err) {
+        showError(err.message);
         flash(err.message);
       }
     }
@@ -1067,10 +1185,15 @@ if (dashboardStats) {
   };
 
   const renderDashboard = (data) => {
-    document.getElementById("statStudents").textContent = data.activeStudents;
-    document.getElementById("statDepartments").textContent = data.departments;
-    document.getElementById("statResults").textContent = data.pendingResults;
-    document.getElementById("statHolds").textContent = data.registrationHolds;
+    const safeNumber = (value) => {
+      const numeric = Number(value);
+      return Number.isFinite(numeric) ? numeric : 0;
+    };
+
+    document.getElementById("statStudents").textContent = safeNumber(data.activeStudents);
+    document.getElementById("statDepartments").textContent = safeNumber(data.departments);
+    document.getElementById("statResults").textContent = safeNumber(data.pendingResults);
+    document.getElementById("statHolds").textContent = safeNumber(data.registrationHolds);
 
     const recentList = document.getElementById("recentRegistrations");
     const recentPageInfo = document.getElementById("recentPageInfo");
@@ -1092,15 +1215,25 @@ if (dashboardStats) {
   const fetchDashboard = async () => {
     const recentStudentNo = document.getElementById("recentStudentNo");
     const recentCourseCode = document.getElementById("recentCourseCode");
+    const recentList = document.getElementById("recentRegistrations");
+    if (recentList) {
+      recentList.innerHTML = loadingListItem("Loading registrations...");
+    }
     try {
-      const data = await store.getDashboardData({
-        page: recentPage,
-        limit: recentLimit,
-        studentNo: recentStudentNo ? recentStudentNo.value.trim() : "",
-        courseCode: recentCourseCode ? recentCourseCode.value.trim() : "",
-      });
+      const data = await withLoading(
+        () =>
+          store.getDashboardData({
+            page: recentPage,
+            limit: recentLimit,
+            studentNo: recentStudentNo ? recentStudentNo.value.trim() : "",
+            courseCode: recentCourseCode ? recentCourseCode.value.trim() : "",
+          }),
+        "Loading dashboard..."
+      );
       renderDashboard(data);
+      clearError();
     } catch (err) {
+      showError(err.message || "Dashboard unavailable.");
       flash(err.message || "Dashboard unavailable.");
     }
   };
@@ -1111,11 +1244,12 @@ if (dashboardStats) {
     taskForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       try {
-        await store.addTask({ text: taskInput.value });
+        await withLoading(() => store.addTask({ text: taskInput.value }), "Adding task...");
         taskForm.reset();
         await fetchDashboard();
         flash("Task added.");
       } catch (error) {
+        showError(error.message);
         flash(error.message);
       }
     });
@@ -1130,9 +1264,10 @@ if (dashboardStats) {
       if (!taskId) return;
 
       try {
-        await store.toggleTask(taskId);
+        await withLoading(() => store.toggleTask(taskId), "Updating task...");
         await fetchDashboard();
       } catch (error) {
+        showError(error.message);
         flash(error.message);
       }
     });
@@ -1147,10 +1282,11 @@ if (dashboardStats) {
       if (!window.confirm("Delete this task?")) return;
 
       try {
-        await store.deleteTask(taskId);
+        await withLoading(() => store.deleteTask(taskId), "Deleting task...");
         await fetchDashboard();
         flash("Task deleted.");
       } catch (error) {
+        showError(error.message);
         flash(error.message);
       }
     });

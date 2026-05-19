@@ -4,6 +4,61 @@
     (window.location.hostname === "localhost" ? "http://localhost:8080" : "");
   const SESSION_KEY = "sms_session_v1";
 
+  const loading = (() => {
+    if (window.SMISLoading) return window.SMISLoading;
+
+    let count = 0;
+    let overlay = null;
+
+    const ensureOverlay = () => {
+      if (overlay) return overlay;
+      if (!document.body) return null;
+
+      overlay = document.createElement("div");
+      overlay.id = "globalLoading";
+      overlay.className = "loading-overlay";
+      overlay.innerHTML = `
+        <div class="loading-card" role="status" aria-live="polite">
+          <div class="loading-spinner" aria-hidden="true"></div>
+          <div class="loading-text">Loading...</div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      return overlay;
+    };
+
+    const setVisible = (visible, label) => {
+      const node = ensureOverlay();
+      if (!node) return;
+      const textNode = node.querySelector(".loading-text");
+      if (label && textNode) textNode.textContent = label;
+      if (!label && visible && textNode && !node.classList.contains("show")) {
+        textNode.textContent = "Loading...";
+      }
+      node.classList.toggle("show", visible);
+      document.body.classList.toggle("is-loading", visible);
+    };
+
+    const start = (label) => {
+      count += 1;
+      setVisible(true, label || "Loading...");
+    };
+
+    const stop = () => {
+      count = Math.max(0, count - 1);
+      if (!count) setVisible(false);
+    };
+
+    const api = { start, stop };
+    window.SMISLoading = api;
+    if (!document.body) {
+      document.addEventListener("DOMContentLoaded", () => ensureOverlay(), { once: true });
+    } else {
+      ensureOverlay();
+    }
+    return api;
+  })();
+
   const getSession = () => {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -25,16 +80,21 @@
       ...getAuthHeaders(),
     };
 
-    const response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers,
-    });
+    if (loading) loading.start();
+    try {
+      const response = await fetch(`${API_BASE}${path}`, {
+        ...options,
+        headers,
+      });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.status === "error") {
-      throw new Error(data.message || "Request failed");
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.status === "error") {
+        throw new Error(data.message || "Request failed");
+      }
+      return data;
+    } finally {
+      if (loading) loading.stop();
     }
-    return data;
   };
 
   const getJson = (path) => request(path);
