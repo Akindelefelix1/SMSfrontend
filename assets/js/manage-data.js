@@ -26,6 +26,16 @@ if (store) {
   const loadingRow = (colSpan, label) =>
     `<tr><td colspan="${colSpan}" class="muted">${label || "Loading..."}</td></tr>`;
 
+  const withOverlay = async (work, label) => {
+    const loading = window.SMISLoading;
+    if (loading) loading.start(label || "Working...");
+    try {
+      return await work();
+    } finally {
+      if (loading) loading.stop();
+    }
+  };
+
   const initSectionTabs = () => {
     const buttons = Array.from(document.querySelectorAll("[data-section-tab]"));
     const sections = Array.from(document.querySelectorAll("[data-section-panel]"));
@@ -251,14 +261,18 @@ if (store) {
           localFlash("Password is required.");
           return;
         }
-        await store.addUser({
-          name: formData.get("name"),
-          role: formData.get("role"),
-          status: formData.get("status"),
-          email: formData.get("email"),
-          username: String(username).trim(),
-          password: String(password).trim()
-        });
+        await withOverlay(
+          () =>
+            store.addUser({
+              name: formData.get("name"),
+              role: formData.get("role"),
+              status: formData.get("status"),
+              email: formData.get("email"),
+              username: String(username).trim(),
+              password: String(password).trim()
+            }),
+          "Adding user..."
+        );
         userForm.reset();
         await renderUsers();
         localFlash("User added.");
@@ -274,13 +288,17 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(studentForm);
       try {
-        await store.addStudent({
-          studentNo: formData.get("studentNo"),
-          name: formData.get("name"),
-          department: formData.get("department"),
-          level: formData.get("level"),
-          status: formData.get("status")
-        });
+        await withOverlay(
+          () =>
+            store.addStudent({
+              studentNo: formData.get("studentNo"),
+              name: formData.get("name"),
+              department: formData.get("department"),
+              level: formData.get("level"),
+              status: formData.get("status")
+            }),
+          "Adding student..."
+        );
         studentForm.reset();
         await refreshAllTables();
         localFlash("Student added.");
@@ -296,7 +314,10 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(departmentForm);
       try {
-        await store.addDepartment({ name: formData.get("name") });
+        await withOverlay(
+          () => store.addDepartment({ name: formData.get("name") }),
+          "Adding department..."
+        );
         departmentForm.reset();
         await refreshAllTables();
         localFlash("Department added.");
@@ -312,12 +333,16 @@ if (store) {
       event.preventDefault();
       const formData = new FormData(courseForm);
       try {
-        await store.addCourse({
-          code: formData.get("code"),
-          title: formData.get("title"),
-          units: formData.get("units"),
-          semester: formData.get("semester")
-        });
+        await withOverlay(
+          () =>
+            store.addCourse({
+              code: formData.get("code"),
+              title: formData.get("title"),
+              units: formData.get("units"),
+              semester: formData.get("semester")
+            }),
+          "Adding course..."
+        );
         courseForm.reset();
         await renderCourses();
         localFlash("Course added.");
@@ -352,7 +377,10 @@ if (store) {
         if (email === null) return;
 
         try {
-          await store.updateUser(userId, { name, role, status, email, username: user.username });
+          await withOverlay(
+            () => store.updateUser(userId, { name, role, status, email, username: user.username }),
+            "Updating user..."
+          );
           await refreshAllTables();
           localFlash("User updated.");
         } catch (error) {
@@ -364,7 +392,7 @@ if (store) {
         const userId = deleteBtn.getAttribute("data-user-delete");
         if (!window.confirm("Delete this user?")) return;
         try {
-          await store.deleteUser(userId);
+          await withOverlay(() => store.deleteUser(userId), "Deleting user...");
           await refreshAllTables();
           localFlash("User deleted.");
         } catch (error) {
@@ -405,7 +433,10 @@ if (store) {
         if (status === null) return;
 
         try {
-          await store.updateStudent(studentId, { studentNo, name, department, level, status });
+          await withOverlay(
+            () => store.updateStudent(studentId, { studentNo, name, department, level, status }),
+            "Updating student..."
+          );
           await refreshAllTables();
           localFlash("Student updated.");
         } catch (error) {
@@ -417,7 +448,7 @@ if (store) {
         const studentId = deleteBtn.getAttribute("data-student-delete");
         if (!window.confirm("Delete this student and related records?")) return;
         try {
-          await store.deleteStudent(studentId);
+          await withOverlay(() => store.deleteStudent(studentId), "Deleting student...");
           await refreshAllTables();
           localFlash("Student deleted.");
         } catch (error) {
@@ -446,7 +477,10 @@ if (store) {
         if (name === null) return;
 
         try {
-          await store.updateDepartment(departmentId, { name });
+          await withOverlay(
+            () => store.updateDepartment(departmentId, { name }),
+            "Updating department..."
+          );
           await refreshAllTables();
           localFlash("Department updated.");
         } catch (error) {
@@ -458,7 +492,7 @@ if (store) {
         const departmentId = deleteBtn.getAttribute("data-department-delete");
         if (!window.confirm("Delete this department?")) return;
         try {
-          await store.deleteDepartment(departmentId);
+          await withOverlay(() => store.deleteDepartment(departmentId), "Deleting department...");
           await refreshAllTables();
           localFlash("Department deleted.");
         } catch (error) {
@@ -493,7 +527,10 @@ if (store) {
         if (semester === null) return;
 
         try {
-          await store.updateCourse(courseId, { code, title, units, semester });
+          await withOverlay(
+            () => store.updateCourse(courseId, { code, title, units, semester }),
+            "Updating course..."
+          );
           await refreshAllTables();
           localFlash("Course updated.");
         } catch (error) {
@@ -505,7 +542,7 @@ if (store) {
         const courseId = deleteBtn.getAttribute("data-course-delete");
         if (!window.confirm("Delete this course and related records?")) return;
         try {
-          await store.deleteCourse(courseId);
+          await withOverlay(() => store.deleteCourse(courseId), "Deleting course...");
           await refreshAllTables();
           localFlash("Course deleted.");
         } catch (error) {
