@@ -23,6 +23,42 @@ if (store) {
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
+  const loadingRow = (colSpan, label) =>
+    `<tr><td colspan="${colSpan}" class="muted">${label || "Loading..."}</td></tr>`;
+
+  const initSectionTabs = () => {
+    const buttons = Array.from(document.querySelectorAll("[data-section-tab]"));
+    const sections = Array.from(document.querySelectorAll("[data-section-panel]"));
+    if (!buttons.length || !sections.length) return;
+
+    const activate = (id) => {
+      sections.forEach((section) => {
+        const match = section.getAttribute("data-section-panel") === id;
+        section.classList.toggle("active", match);
+      });
+      buttons.forEach((button) => {
+        const match = button.getAttribute("data-section-tab") === id;
+        button.classList.toggle("active", match);
+      });
+      if (id) {
+        history.replaceState(null, "", `#${id}`);
+      }
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.getAttribute("data-section-tab");
+        if (!target) return;
+        activate(target);
+      });
+    });
+
+    const initial =
+      (window.location.hash || "").replace("#", "") ||
+      buttons[0].getAttribute("data-section-tab");
+    if (initial) activate(initial);
+  };
+
   const studentFilterInput = document.getElementById("studentFilterInput");
   const studentFilterClear = document.getElementById("studentFilterClear");
   const getStudentFilter = () =>
@@ -39,7 +75,12 @@ if (store) {
   const renderUsers = async () => {
     const usersBody = document.getElementById("usersBody");
     if (!usersBody) return;
+    usersBody.innerHTML = loadingRow(5, "Loading users...");
     const data = await store.getAll();
+    if (!data.users.length) {
+      usersBody.innerHTML = '<tr><td colspan="5" class="muted">No users added yet.</td></tr>';
+      return;
+    }
     usersBody.innerHTML = data.users
       .map(
         (user) => `
@@ -62,6 +103,7 @@ if (store) {
   const renderStudents = async () => {
     const studentsBody = document.getElementById("studentsBody");
     if (!studentsBody) return;
+    studentsBody.innerHTML = loadingRow(6, "Loading students...");
     const data = await store.getAll();
     const filter = getStudentFilter();
     const rows = data.students.filter((student) => {
@@ -91,15 +133,21 @@ if (store) {
       .join("");
 
     if (!rows.length) {
-      studentsBody.innerHTML =
-        '<tr><td colspan="6" class="muted">No matching students found.</td></tr>';
+      studentsBody.innerHTML = data.students.length
+        ? '<tr><td colspan="6" class="muted">No matching students found.</td></tr>'
+        : '<tr><td colspan="6" class="muted">No students added yet.</td></tr>';
     }
   };
 
   const renderCourses = async () => {
     const coursesBody = document.getElementById("coursesBody");
     if (!coursesBody) return;
+    coursesBody.innerHTML = loadingRow(5, "Loading courses...");
     const data = await store.getAll();
+    if (!data.courses.length) {
+      coursesBody.innerHTML = '<tr><td colspan="5" class="muted">No courses added yet.</td></tr>';
+      return;
+    }
     coursesBody.innerHTML = data.courses
       .map(
         (course) => `
@@ -122,21 +170,33 @@ if (store) {
   const renderDepartments = async () => {
     const departmentsBody = document.getElementById("departmentsBody");
     if (!departmentsBody) return;
-    const departments = await store.getDepartments();
-    departmentsBody.innerHTML = departments
-      .map(
-        (department) => `
-          <tr>
-            <td>${escapeHtml(department.name)}</td>
-            <td>
-              <div class="actions">
-                <button class="btn btn-outline" type="button" data-department-edit="${department.id}">Edit</button>
-                <button class="btn btn-outline" type="button" data-department-delete="${department.id}">Delete</button>
-              </div>
-            </td>
-          </tr>`
-      )
-      .join("");
+    departmentsBody.innerHTML = loadingRow(2, "Loading departments...");
+    try {
+      const departments = await store.getDepartments();
+      if (!departments.length) {
+        departmentsBody.innerHTML =
+          '<tr><td colspan="2" class="muted">No departments added yet.</td></tr>';
+        return;
+      }
+      departmentsBody.innerHTML = departments
+        .map(
+          (department) => `
+            <tr>
+              <td>${escapeHtml(department.name)}</td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn-outline" type="button" data-department-edit="${department.id}">Edit</button>
+                  <button class="btn btn-outline" type="button" data-department-delete="${department.id}">Delete</button>
+                </div>
+              </td>
+            </tr>`
+        )
+        .join("");
+    } catch (error) {
+      departmentsBody.innerHTML =
+        '<tr><td colspan="2" class="muted">Unable to load departments.</td></tr>';
+      localFlash(error.message);
+    }
   };
 
   const populateDepartmentSelects = async () => {
@@ -179,7 +239,7 @@ if (store) {
 
   const userForm = document.getElementById("userForm");
   if (userForm) {
-    userForm.addEventListener("submit", (event) => {
+    userForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(userForm);
       try {
@@ -210,7 +270,7 @@ if (store) {
 
   const studentForm = document.getElementById("studentForm");
   if (studentForm) {
-    studentForm.addEventListener("submit", (event) => {
+    studentForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(studentForm);
       try {
@@ -232,7 +292,7 @@ if (store) {
 
   const departmentForm = document.getElementById("departmentForm");
   if (departmentForm) {
-    departmentForm.addEventListener("submit", (event) => {
+    departmentForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(departmentForm);
       try {
@@ -248,7 +308,7 @@ if (store) {
 
   const courseForm = document.getElementById("courseForm");
   if (courseForm) {
-    courseForm.addEventListener("submit", (event) => {
+    courseForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(courseForm);
       try {
@@ -269,7 +329,7 @@ if (store) {
 
   const usersBody = document.getElementById("usersBody");
   if (usersBody) {
-    usersBody.addEventListener("click", (event) => {
+    usersBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-user-edit]");
       const deleteBtn = event.target.closest("[data-user-delete]");
       const data = await store.getAll();
@@ -316,7 +376,7 @@ if (store) {
 
   const studentsBody = document.getElementById("studentsBody");
   if (studentsBody) {
-    studentsBody.addEventListener("click", (event) => {
+    studentsBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-student-edit]");
       const deleteBtn = event.target.closest("[data-student-delete]");
       const data = await store.getAll();
@@ -369,7 +429,7 @@ if (store) {
 
   const departmentsBody = document.getElementById("departmentsBody");
   if (departmentsBody) {
-    departmentsBody.addEventListener("click", (event) => {
+    departmentsBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-department-edit]");
       const deleteBtn = event.target.closest("[data-department-delete]");
       const departments = await store.getDepartments();
@@ -410,7 +470,7 @@ if (store) {
 
   const coursesBody = document.getElementById("coursesBody");
   if (coursesBody) {
-    coursesBody.addEventListener("click", (event) => {
+    coursesBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-course-edit]");
       const deleteBtn = event.target.closest("[data-course-delete]");
       const data = await store.getAll();
@@ -457,7 +517,7 @@ if (store) {
 
   const exportBtn = document.getElementById("exportDataBtn");
   if (exportBtn) {
-    exportBtn.addEventListener("click", () => {
+    exportBtn.addEventListener("click", async () => {
       try {
         const payload = await store.exportData();
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -495,7 +555,7 @@ if (store) {
 
   const resetBtn = document.getElementById("resetDataBtn");
   if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
+    resetBtn.addEventListener("click", async () => {
       if (!window.confirm("Reset all local test data to default seed?")) return;
       await store.resetData();
       await refreshAllTables();
@@ -503,6 +563,7 @@ if (store) {
     });
   }
 
+  initSectionTabs();
   await refreshAllTables();
   })();
 }

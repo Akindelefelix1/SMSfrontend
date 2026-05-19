@@ -29,7 +29,14 @@
       <a class="btn btn-outline" href="dashboard.html">Back to Dashboard</a>
     </section>
 
-    <section class="card">
+    <div class="subnav" role="tablist" aria-label="Student management">
+      <button class="btn btn-outline active" type="button" data-section-tab="add-student">Add Student</button>
+      <button class="btn btn-outline" type="button" data-section-tab="student-list">Student List</button>
+      <button class="btn btn-outline" type="button" data-section-tab="departments">Departments</button>
+      <button class="btn btn-outline" type="button" data-section-tab="data-tools">Data Tools</button>
+    </div>
+
+    <section class="card tab-section active" data-section-panel="add-student">
       <h2>Add Student</h2>
       <form id="studentForm">
         <div class="form-grid">
@@ -72,7 +79,7 @@
       </form>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="student-list">
       <h2>Students List</h2>
       <div class="mini-form" style="margin-top: 10px;">
         <input type="text" id="studentFilterInput" placeholder="Filter by student no or name" />
@@ -93,7 +100,7 @@
       </table>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="departments">
       <h2>Departments</h2>
       <form id="departmentForm">
         <div class="form-grid">
@@ -118,7 +125,7 @@
       </table>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="data-tools">
       <h2>Data Tools</h2>
       <div class="actions">
         <button class="btn" id="exportDataBtn" type="button">Export JSON</button>

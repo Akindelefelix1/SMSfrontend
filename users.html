@@ -29,7 +29,16 @@
       <a class="btn btn-outline" href="dashboard.html">Back to Dashboard</a>
     </section>
 
-    <section class="card">
+    <div class="subnav" role="tablist" aria-label="User management">
+      <button class="btn btn-outline active" type="button" data-section-tab="add-user">Add User</button>
+      <button class="btn btn-outline" type="button" data-section-tab="user-list">Users</button>
+      <button class="btn btn-outline" type="button" data-section-tab="add-student">Add Student</button>
+      <button class="btn btn-outline" type="button" data-section-tab="student-list">Students</button>
+      <button class="btn btn-outline" type="button" data-section-tab="departments">Departments</button>
+      <button class="btn btn-outline" type="button" data-section-tab="data-tools">Data Tools</button>
+    </div>
+
+    <section class="card tab-section active" data-section-panel="add-user">
       <h2>Add User</h2>
       <form id="userForm">
         <div class="form-grid">
@@ -65,7 +74,7 @@
       </form>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="user-list">
       <h2>Users</h2>
       <table class="table">
         <thead>
@@ -81,7 +90,7 @@
       </table>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="add-student">
       <h2>Add Student</h2>
       <form id="studentForm">
         <div class="form-grid">
@@ -124,7 +133,7 @@
       </form>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="student-list">
       <h2>Students</h2>
       <table class="table">
         <thead>
@@ -141,7 +150,7 @@
       </table>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="departments">
       <h2>Departments</h2>
       <form id="departmentForm">
         <div class="form-grid">
@@ -166,7 +175,7 @@
       </table>
     </section>
 
-    <section class="card">
+    <section class="card tab-section" data-section-panel="data-tools">
       <h2>Data Tools</h2>
       <p class="muted">Export local test data, import a shared file, or reset to default seed.</p>
       <div class="actions" style="margin-top: 12px;">

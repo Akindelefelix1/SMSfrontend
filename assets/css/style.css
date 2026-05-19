@@ -378,6 +378,33 @@ body {
   margin-top: 16px;
 }
 
+.subnav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0 18px;
+}
+
+.subnav .btn {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+
+.subnav .btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.tab-section {
+  display: none;
+}
+
+.tab-section.active {
+  display: block;
+}
+
 .toast {
   position: fixed;
   bottom: 20px;
