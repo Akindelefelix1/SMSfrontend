@@ -36,6 +36,119 @@ if (store) {
     }
   };
 
+  const openModal = ({ title, body, confirmText, cancelText }) => {
+    return new Promise((resolve) => {
+      const backdrop = document.createElement("div");
+      backdrop.className = "modal-backdrop";
+
+      const card = document.createElement("div");
+      card.className = "modal-card";
+
+      const header = document.createElement("div");
+      header.className = "modal-header";
+      const heading = document.createElement("h3");
+      heading.textContent = title || "Confirm";
+      header.appendChild(heading);
+
+      const content = document.createElement("div");
+      content.className = "modal-body";
+      if (typeof body === "string") {
+        content.innerHTML = body;
+      } else if (body) {
+        content.appendChild(body);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "modal-actions";
+      const cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn btn-outline";
+      cancelBtn.textContent = cancelText || "Cancel";
+      const confirmBtn = document.createElement("button");
+      confirmBtn.type = "button";
+      confirmBtn.className = "btn";
+      confirmBtn.textContent = confirmText || "Confirm";
+      actions.append(cancelBtn, confirmBtn);
+
+      card.append(header, content, actions);
+      backdrop.appendChild(card);
+      document.body.appendChild(backdrop);
+      document.body.classList.add("modal-open");
+
+      const cleanup = () => {
+        document.body.classList.remove("modal-open");
+        backdrop.remove();
+        document.removeEventListener("keydown", onKeydown);
+      };
+
+      const onKeydown = (event) => {
+        if (event.key === "Escape") {
+          cleanup();
+          resolve(false);
+        }
+      };
+
+      cancelBtn.addEventListener("click", () => {
+        cleanup();
+        resolve(false);
+      });
+
+      confirmBtn.addEventListener("click", () => {
+        cleanup();
+        resolve(true);
+      });
+
+      document.addEventListener("keydown", onKeydown);
+      confirmBtn.focus();
+    });
+  };
+
+  const confirmModal = async (title, message, confirmText) => {
+    const body = `<p class="muted">${escapeHtml(message || "Are you sure?")}</p>`;
+    return openModal({ title, body, confirmText, cancelText: "Cancel" });
+  };
+
+  const formModal = async (title, fields, confirmText) => {
+    const form = document.createElement("form");
+    form.className = "modal-form";
+
+    fields.forEach((field) => {
+      const label = document.createElement("label");
+      label.textContent = field.label || field.name;
+      const input = field.type === "select" ? document.createElement("select") : document.createElement("input");
+      input.name = field.name;
+      if (field.type && field.type !== "select") input.type = field.type;
+      if (field.required) input.required = true;
+      if (field.placeholder) input.placeholder = field.placeholder;
+
+      if (field.type === "select") {
+        (field.options || []).forEach((option) => {
+          const opt = document.createElement("option");
+          opt.value = option.value;
+          opt.textContent = option.label;
+          input.appendChild(opt);
+        });
+      }
+
+      if (field.value !== undefined && field.value !== null) {
+        input.value = String(field.value);
+      }
+
+      label.appendChild(input);
+      form.appendChild(label);
+    });
+
+    const ok = await openModal({ title, body: form, confirmText: confirmText || "Save" });
+    if (!ok) return null;
+
+    const data = {};
+    fields.forEach((field) => {
+      const input = form.querySelector(`[name="${field.name}"]`);
+      data[field.name] = input ? input.value : "";
+    });
+    return data;
+  };
+
   const initSectionTabs = () => {
     const buttons = Array.from(document.querySelectorAll("[data-section-tab]"));
     const sections = Array.from(document.querySelectorAll("[data-section-panel]"));
@@ -70,9 +183,26 @@ if (store) {
   };
 
   const studentFilterInput = document.getElementById("studentFilterInput");
+  const studentFilterDepartment = document.getElementById("studentFilterDepartment");
+  const studentFilterLevel = document.getElementById("studentFilterLevel");
+  const courseFilterDepartment = document.getElementById("courseFilterDepartment");
   const studentFilterClear = document.getElementById("studentFilterClear");
   const getStudentFilter = () =>
     String(studentFilterInput ? studentFilterInput.value : "").trim().toLowerCase();
+  const getDepartmentFilter = () =>
+    String(studentFilterDepartment ? studentFilterDepartment.value : "").trim();
+  const getLevelFilter = () =>
+    String(studentFilterLevel ? studentFilterLevel.value : "").trim();
+
+  const getDepartmentName = (value) => {
+    if (!value) return "-";
+    if (typeof value === "string") return value;
+    if (typeof value === "object") return value.name || value.department || "-";
+    return "-";
+  };
+
+  const getCourseDepartmentName = (course) =>
+    getDepartmentName(course && course.department ? course.department : course && course.departmentName);
 
   if (studentFilterInput) {
     const params = new URLSearchParams(window.location.search);
@@ -102,7 +232,7 @@ if (store) {
             <td>
               <div class="actions">
                 <button class="btn btn-outline" type="button" data-user-edit="${user.id}">Edit</button>
-                <button class="btn btn-outline" type="button" data-user-delete="${user.id}">Delete</button>
+                  <button class="btn btn-outline btn-danger" type="button" data-user-delete="${user.id}">Delete</button>
               </div>
             </td>
           </tr>`
@@ -116,6 +246,8 @@ if (store) {
     studentsBody.innerHTML = loadingRow(6, "Loading students...");
     const data = await store.getAll();
     const filter = getStudentFilter();
+    const departmentFilter = getDepartmentFilter();
+    const levelFilter = getLevelFilter();
     const rows = data.students.filter((student) => {
       if (!filter) return true;
       return (
@@ -123,26 +255,35 @@ if (store) {
         String(student.name).toLowerCase().includes(filter)
       );
     });
-    studentsBody.innerHTML = rows
+    const filtered = rows.filter((student) => {
+      if (departmentFilter && getDepartmentName(student.department) !== departmentFilter) {
+        return false;
+      }
+      if (levelFilter && String(student.level) !== levelFilter) {
+        return false;
+      }
+      return true;
+    });
+    studentsBody.innerHTML = filtered
       .map(
         (student) => `
           <tr>
             <td>${escapeHtml(student.studentNo)}</td>
             <td>${escapeHtml(student.name)}</td>
-            <td>${escapeHtml(student.department)}</td>
+            <td>${escapeHtml(getDepartmentName(student.department))}</td>
             <td>${escapeHtml(student.level)}</td>
             <td>${escapeHtml(student.status)}</td>
             <td>
               <div class="actions">
                 <button class="btn btn-outline" type="button" data-student-edit="${student.id}">Edit</button>
-                <button class="btn btn-outline" type="button" data-student-delete="${student.id}">Delete</button>
+                  <button class="btn btn-outline btn-danger" type="button" data-student-delete="${student.id}">Delete</button>
               </div>
             </td>
           </tr>`
       )
       .join("");
 
-    if (!rows.length) {
+    if (!filtered.length) {
       studentsBody.innerHTML = data.students.length
         ? '<tr><td colspan="6" class="muted">No matching students found.</td></tr>'
         : '<tr><td colspan="6" class="muted">No students added yet.</td></tr>';
@@ -152,24 +293,32 @@ if (store) {
   const renderCourses = async () => {
     const coursesBody = document.getElementById("coursesBody");
     if (!coursesBody) return;
-    coursesBody.innerHTML = loadingRow(5, "Loading courses...");
+    coursesBody.innerHTML = loadingRow(6, "Loading courses...");
     const data = await store.getAll();
-    if (!data.courses.length) {
-      coursesBody.innerHTML = '<tr><td colspan="5" class="muted">No courses added yet.</td></tr>';
+    const departmentFilter = courseFilterDepartment ? courseFilterDepartment.value : "";
+    const courses = Array.isArray(data.courses) ? data.courses : [];
+    const filtered = departmentFilter
+      ? courses.filter((course) => getCourseDepartmentName(course) === departmentFilter)
+      : courses;
+    if (!filtered.length) {
+      coursesBody.innerHTML = courses.length
+        ? '<tr><td colspan="6" class="muted">No matching courses found.</td></tr>'
+        : '<tr><td colspan="6" class="muted">No courses added yet.</td></tr>';
       return;
     }
-    coursesBody.innerHTML = data.courses
+    coursesBody.innerHTML = filtered
       .map(
         (course) => `
           <tr>
             <td>${escapeHtml(course.code)}</td>
             <td>${escapeHtml(course.title)}</td>
+            <td>${escapeHtml(getCourseDepartmentName(course))}</td>
             <td>${escapeHtml(course.units)}</td>
             <td>${escapeHtml(course.semester)}</td>
             <td>
               <div class="actions">
                 <button class="btn btn-outline" type="button" data-course-edit="${course.id}">Edit</button>
-                <button class="btn btn-outline" type="button" data-course-delete="${course.id}">Delete</button>
+                <button class="btn btn-outline btn-danger" type="button" data-course-delete="${course.id}">Delete</button>
               </div>
             </td>
           </tr>`
@@ -196,7 +345,7 @@ if (store) {
               <td>
                 <div class="actions">
                   <button class="btn btn-outline" type="button" data-department-edit="${department.id}">Edit</button>
-                  <button class="btn btn-outline" type="button" data-department-delete="${department.id}">Delete</button>
+                    <button class="btn btn-outline btn-danger" type="button" data-department-delete="${department.id}">Delete</button>
                 </div>
               </td>
             </tr>`
@@ -224,6 +373,30 @@ if (store) {
         select.value = current;
       }
     });
+
+    if (studentFilterDepartment) {
+      const current = studentFilterDepartment.value;
+      studentFilterDepartment.innerHTML =
+        '<option value="">All departments</option>' +
+        departments
+          .map((department) => `<option value="${department.name}">${department.name}</option>`)
+          .join("");
+      if (current && departments.some((department) => department.name === current)) {
+        studentFilterDepartment.value = current;
+      }
+    }
+
+    if (courseFilterDepartment) {
+      const current = courseFilterDepartment.value;
+      courseFilterDepartment.innerHTML =
+        '<option value="">All departments</option>' +
+        departments
+          .map((department) => `<option value="${department.name}">${department.name}</option>`)
+          .join("");
+      if (current && departments.some((department) => department.name === current)) {
+        courseFilterDepartment.value = current;
+      }
+    }
   };
 
   const refreshAllTables = async () => {
@@ -240,9 +413,29 @@ if (store) {
     });
   }
 
+  if (studentFilterDepartment) {
+    studentFilterDepartment.addEventListener("change", () => {
+      renderStudents();
+    });
+  }
+
+  if (studentFilterLevel) {
+    studentFilterLevel.addEventListener("change", () => {
+      renderStudents();
+    });
+  }
+
+  if (courseFilterDepartment) {
+    courseFilterDepartment.addEventListener("change", () => {
+      renderCourses();
+    });
+  }
+
   if (studentFilterClear) {
     studentFilterClear.addEventListener("click", () => {
       if (studentFilterInput) studentFilterInput.value = "";
+      if (studentFilterDepartment) studentFilterDepartment.value = "";
+      if (studentFilterLevel) studentFilterLevel.value = "";
       renderStudents();
     });
   }
@@ -291,6 +484,7 @@ if (store) {
         await withOverlay(
           () =>
             store.addStudent({
+              department: formData.get("department"),
               studentNo: formData.get("studentNo"),
               name: formData.get("name"),
               department: formData.get("department"),
@@ -302,7 +496,6 @@ if (store) {
         studentForm.reset();
         await refreshAllTables();
         localFlash("Student added.");
-      } catch (error) {
         localFlash(error.message);
       }
     });
@@ -346,7 +539,7 @@ if (store) {
         courseForm.reset();
         await renderCourses();
         localFlash("Course added.");
-      } catch (error) {
+                <button class="btn btn-outline btn-danger" type="button" data-course-delete="${course.id}">Delete</button>
         localFlash(error.message);
       }
     });
@@ -367,18 +560,48 @@ if (store) {
           return;
         }
 
-        const name = window.prompt("User name", user.name);
-        if (name === null) return;
-        const role = window.prompt("Role", user.role);
-        if (role === null) return;
-        const status = window.prompt("Status", user.status);
-        if (status === null) return;
-        const email = window.prompt("Email", user.email || "");
-        if (email === null) return;
+        const updated = await formModal("Edit user", [
+          { name: "name", label: "Full name", value: user.name, required: true },
+          {
+            name: "role",
+            label: "Role",
+            type: "select",
+            value: user.role,
+            options: [
+              { label: "Admin", value: "admin" },
+              { label: "Lecturer", value: "lecturer" },
+              { label: "Support", value: "support" },
+              { label: "Super admin", value: "super_admin" }
+            ],
+            required: true
+          },
+          {
+            name: "status",
+            label: "Status",
+            type: "select",
+            value: user.status,
+            options: [
+              { label: "Active", value: "Active" },
+              { label: "Pending", value: "Pending" },
+              { label: "Suspended", value: "Suspended" }
+            ],
+            required: true
+          },
+          { name: "email", label: "Email", type: "email", value: user.email || "" }
+        ], "Save changes");
+
+        if (!updated) return;
 
         try {
           await withOverlay(
-            () => store.updateUser(userId, { name, role, status, email, username: user.username }),
+            () =>
+              store.updateUser(userId, {
+                name: updated.name,
+                role: updated.role,
+                status: updated.status,
+                email: updated.email,
+                username: user.username
+              }),
             "Updating user..."
           );
           await refreshAllTables();
@@ -390,7 +613,8 @@ if (store) {
 
       if (deleteBtn) {
         const userId = deleteBtn.getAttribute("data-user-delete");
-        if (!window.confirm("Delete this user?")) return;
+        const confirmed = await confirmModal("Delete user", "Delete this user?", "Delete");
+        if (!confirmed) return;
         try {
           await withOverlay(() => store.deleteUser(userId), "Deleting user...");
           await refreshAllTables();
@@ -418,23 +642,54 @@ if (store) {
           return;
         }
 
-        const studentNo = window.prompt("Student No", student.studentNo);
-        if (studentNo === null) return;
-        const name = window.prompt("Name", student.name);
-        if (name === null) return;
-        const department = window.prompt(
-          `Department (${departmentNames.join(", ")})`,
-          student.department
-        );
-        if (department === null) return;
-        const level = window.prompt("Level", student.level);
-        if (level === null) return;
-        const status = window.prompt("Status", student.status);
-        if (status === null) return;
+        const updated = await formModal("Edit student", [
+          { name: "studentNo", label: "Student No", value: student.studentNo, required: true },
+          { name: "name", label: "Full name", value: student.name, required: true },
+          {
+            name: "department",
+            label: "Department",
+            type: "select",
+            value: student.department,
+            options: departmentNames.map((dept) => ({ label: dept, value: dept })),
+            required: true
+          },
+          {
+            name: "level",
+            label: "Level",
+            type: "select",
+            value: student.level,
+            options: ["100", "200", "300", "400", "500"].map((levelValue) => ({
+              label: levelValue,
+              value: levelValue
+            })),
+            required: true
+          },
+          {
+            name: "status",
+            label: "Status",
+            type: "select",
+            value: student.status,
+            options: [
+              { label: "Active", value: "Active" },
+              { label: "Pending", value: "Pending" },
+              { label: "On Hold", value: "On Hold" }
+            ],
+            required: true
+          }
+        ], "Save changes");
+
+        if (!updated) return;
 
         try {
           await withOverlay(
-            () => store.updateStudent(studentId, { studentNo, name, department, level, status }),
+            () =>
+              store.updateStudent(studentId, {
+                studentNo: updated.studentNo,
+                name: updated.name,
+                department: updated.department,
+                level: updated.level,
+                status: updated.status
+              }),
             "Updating student..."
           );
           await refreshAllTables();
@@ -446,7 +701,12 @@ if (store) {
 
       if (deleteBtn) {
         const studentId = deleteBtn.getAttribute("data-student-delete");
-        if (!window.confirm("Delete this student and related records?")) return;
+        const confirmed = await confirmModal(
+          "Delete student",
+          "Delete this student and related records?",
+          "Delete"
+        );
+        if (!confirmed) return;
         try {
           await withOverlay(() => store.deleteStudent(studentId), "Deleting student...");
           await refreshAllTables();
@@ -473,12 +733,15 @@ if (store) {
           return;
         }
 
-        const name = window.prompt("Department name", target.name);
-        if (name === null) return;
+        const updated = await formModal("Edit department", [
+          { name: "name", label: "Department name", value: target.name, required: true }
+        ], "Save changes");
+
+        if (!updated) return;
 
         try {
           await withOverlay(
-            () => store.updateDepartment(departmentId, { name }),
+            () => store.updateDepartment(departmentId, { name: updated.name }),
             "Updating department..."
           );
           await refreshAllTables();
@@ -490,7 +753,8 @@ if (store) {
 
       if (deleteBtn) {
         const departmentId = deleteBtn.getAttribute("data-department-delete");
-        if (!window.confirm("Delete this department?")) return;
+        const confirmed = await confirmModal("Delete department", "Delete this department?", "Delete");
+        if (!confirmed) return;
         try {
           await withOverlay(() => store.deleteDepartment(departmentId), "Deleting department...");
           await refreshAllTables();
@@ -517,18 +781,44 @@ if (store) {
           return;
         }
 
-        const code = window.prompt("Course code", course.code);
-        if (code === null) return;
-        const title = window.prompt("Course title", course.title);
-        if (title === null) return;
-        const units = window.prompt("Units", course.units);
-        if (units === null) return;
-        const semester = window.prompt("Semester", course.semester);
-        if (semester === null) return;
+        const departments = await store.getDepartments();
+        const updated = await formModal("Edit course", [
+          {
+            name: "department",
+            label: "Department",
+            type: "select",
+            value: getCourseDepartmentName(course),
+            options: departments.map((dept) => ({ label: dept.name, value: dept.name })),
+            required: true
+          },
+          { name: "code", label: "Course code", value: course.code, required: true },
+          { name: "title", label: "Course title", value: course.title, required: true },
+          { name: "units", label: "Units", type: "number", value: course.units, required: true },
+          {
+            name: "semester",
+            label: "Semester",
+            type: "select",
+            value: course.semester,
+            options: [
+              { label: "First Semester", value: "First Semester" },
+              { label: "Second Semester", value: "Second Semester" }
+            ],
+            required: true
+          }
+        ], "Save changes");
+
+        if (!updated) return;
 
         try {
           await withOverlay(
-            () => store.updateCourse(courseId, { code, title, units, semester }),
+            () =>
+              store.updateCourse(courseId, {
+                department: updated.department,
+                code: updated.code,
+                title: updated.title,
+                units: updated.units,
+                semester: updated.semester
+              }),
             "Updating course..."
           );
           await refreshAllTables();
@@ -540,7 +830,12 @@ if (store) {
 
       if (deleteBtn) {
         const courseId = deleteBtn.getAttribute("data-course-delete");
-        if (!window.confirm("Delete this course and related records?")) return;
+        const confirmed = await confirmModal(
+          "Delete course",
+          "Delete this course and related records?",
+          "Delete"
+        );
+        if (!confirmed) return;
         try {
           await withOverlay(() => store.deleteCourse(courseId), "Deleting course...");
           await refreshAllTables();
