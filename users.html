@@ -24,7 +24,7 @@
     <section class="hero">
       <div>
         <h1>User Management</h1>
-        <p>Add users and students directly in local browser storage for testing.</p>
+        <p>Add users and students directly through the backend API.</p>
       </div>
       <a class="btn btn-outline" href="dashboard.html">Back to Dashboard</a>
     </section>
@@ -55,7 +55,6 @@
             <select name="role" required>
               <option>Admin</option>
               <option>Lecturer</option>
-              <option>Student</option>
               <option>Support</option>
             </select>
           </label>
@@ -177,12 +176,12 @@
 
     <section class="card tab-section" data-section-panel="data-tools">
       <h2>Data Tools</h2>
-      <p class="muted">Export local test data, import a shared file, or reset to default seed.</p>
+      <p class="muted">Export backend data, import a shared file, or reset backend records.</p>
       <div class="actions" style="margin-top: 12px;">
         <button class="btn" id="exportDataBtn" type="button">Export JSON</button>
         <label class="btn btn-outline" for="importDataFile">Import JSON</label>
         <input id="importDataFile" type="file" accept="application/json" style="display: none;" />
-        <button class="btn btn-outline" id="resetDataBtn" type="button">Reset Local Data</button>
+        <button class="btn btn-outline" id="resetDataBtn" type="button">Reset Backend Data</button>
       </div>
     </section>
   </main>

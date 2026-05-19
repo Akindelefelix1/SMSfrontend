@@ -484,7 +484,6 @@ if (store) {
         await withOverlay(
           () =>
             store.addStudent({
-              department: formData.get("department"),
               studentNo: formData.get("studentNo"),
               name: formData.get("name"),
               department: formData.get("department"),
@@ -496,6 +495,7 @@ if (store) {
         studentForm.reset();
         await refreshAllTables();
         localFlash("Student added.");
+      } catch (error) {
         localFlash(error.message);
       }
     });
@@ -529,6 +529,7 @@ if (store) {
         await withOverlay(
           () =>
             store.addCourse({
+              department: formData.get("department"),
               code: formData.get("code"),
               title: formData.get("title"),
               units: formData.get("units"),
@@ -537,9 +538,9 @@ if (store) {
           "Adding course..."
         );
         courseForm.reset();
-        await renderCourses();
+        await refreshAllTables();
         localFlash("Course added.");
-                <button class="btn btn-outline btn-danger" type="button" data-course-delete="${course.id}">Delete</button>
+      } catch (error) {
         localFlash(error.message);
       }
     });
@@ -649,7 +650,7 @@ if (store) {
             name: "department",
             label: "Department",
             type: "select",
-            value: student.department,
+            value: getDepartmentName(student.department),
             options: departmentNames.map((dept) => ({ label: dept, value: dept })),
             required: true
           },
@@ -856,7 +857,7 @@ if (store) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `smis-local-data-${new Date().toISOString().slice(0, 10)}.json`;
+        link.download = `sms-backend-data-${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -888,10 +889,14 @@ if (store) {
   const resetBtn = document.getElementById("resetDataBtn");
   if (resetBtn) {
     resetBtn.addEventListener("click", async () => {
-      if (!window.confirm("Reset all local test data to default seed?")) return;
-      await store.resetData();
-      await refreshAllTables();
-      localFlash("Data reset.");
+      if (!window.confirm("Reset backend data? This removes departments, students, courses, registrations, results, submissions, and tasks.")) return;
+      try {
+        await withOverlay(() => store.resetData(), "Resetting backend data...");
+        await refreshAllTables();
+        localFlash("Backend data reset.");
+      } catch (error) {
+        localFlash(error.message);
+      }
     });
   }
 

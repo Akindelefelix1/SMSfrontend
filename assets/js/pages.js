@@ -651,6 +651,7 @@ if (registrationForm) {
   const checklist = document.getElementById("courseChecklist");
   const registrationDepartment = document.getElementById("registrationDepartment");
   const registrationStudentNo = document.getElementById("registrationStudentNo");
+  const generatedRegNo = document.getElementById("generatedRegNo");
 
   const populateRegistrationStudents = async () => {
     if (!registrationDepartment || !registrationStudentNo || !store) return;
@@ -726,13 +727,13 @@ if (registrationForm) {
     const courses = Array.from(
       registrationForm.querySelectorAll("input[type='checkbox']:checked")
     ).map((input) => input.dataset.course);
+    const studentNo = formData.get("studentNo") || (registrationStudentNo ? registrationStudentNo.value : "");
 
     try {
       const result = await postJson(
         "/api/registrations",
         {
-          studentNo: formData.get("studentNo"),
-          regNo: formData.get("regNo"),
+          studentNo,
           semester: formData.get("semester"),
           academicYear: formData.get("academicYear"),
           courses,
@@ -740,8 +741,10 @@ if (registrationForm) {
         "Submitting registration...",
         { overlay: true }
       );
+      const regNo = result.data && result.data.regNo ? result.data.regNo : "";
+      if (generatedRegNo && regNo) generatedRegNo.value = regNo;
       clearError();
-      flash(result.message || "Registration saved.");
+      flash(regNo ? `Registration saved. No: ${regNo}` : result.message || "Registration saved.");
     } catch (err) {
       showError(err.message);
       flash(err.message);
