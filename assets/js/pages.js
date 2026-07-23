@@ -300,7 +300,15 @@ const renderAdminActivity = async () => {
     const result = await getJson("/api/admin/activity", "Loading activity...");
     const items = Array.isArray(result.data) ? result.data : [];
     list.innerHTML = items.length
-      ? items.map((item) => `<li>${item}</li>`).join("")
+      ? items
+          .map(
+            (item, index) => `
+              <li>
+                <span class="activity-marker" aria-hidden="true">${index + 1}</span>
+                <span>${escapeHtml(item)}</span>
+              </li>`
+          )
+          .join("")
       : '<li class="empty-state">No recent activity yet.</li>';
     clearError();
   } catch (_err) {
@@ -327,22 +335,6 @@ const initAdminSearch = () => {
       go();
     }
   });
-};
-
-const renderSystemStatus = () => {
-  const dataMode = document.getElementById("systemDataMode");
-  const onlineStatus = document.getElementById("systemOnline");
-  const systemTime = document.getElementById("systemTimestamp");
-
-  if (dataMode) {
-    dataMode.textContent = "Backend API";
-  }
-  if (onlineStatus) {
-    onlineStatus.textContent = navigator.onLine ? "Online" : "Offline";
-  }
-  if (systemTime) {
-    systemTime.textContent = new Date().toLocaleString();
-  }
 };
 
 const renderStudentDashboard = async () => {
@@ -1806,6 +1798,5 @@ if (allRegistrationsBody && store) {
 }
 
 renderAdminActivity();
-renderSystemStatus();
 renderStudentDashboard();
 initAdminSearch();

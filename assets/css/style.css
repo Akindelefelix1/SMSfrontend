@@ -523,6 +523,159 @@ body {
   padding: 26px;
 }
 
+.admin-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 0 18px;
+  padding: 13px 0;
+  border-block: 1px solid #dce4ee;
+}
+
+.admin-student-search {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.admin-student-search label {
+  flex: 0 0 auto;
+  margin-right: 3px;
+  color: #25364d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-student-search input {
+  width: min(260px, 27vw);
+}
+
+.admin-action-links {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-action-links .btn {
+  min-height: 40px;
+  padding: 9px 13px;
+  font-size: 12px;
+}
+
+.admin-deadline-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+  padding: 19px 22px;
+  background: #eaf2ff;
+  border: 1px solid #d6e6ff;
+  border-radius: 13px;
+}
+
+.admin-deadline-strip h2,
+.dashboard-wide-header h2 {
+  margin: 0;
+  color: #172a45;
+  font-size: 19px;
+}
+
+.admin-deadline-strip p,
+.dashboard-wide-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.admin-deadline-form {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.admin-deadline-form input {
+  width: 180px;
+}
+
+.dashboard-submissions-card,
+.dashboard-activity-card {
+  margin-bottom: 18px;
+  padding: 26px;
+}
+
+.dashboard-wide-header {
+  margin-bottom: 19px;
+}
+
+.card-header.dashboard-wide-header {
+  align-items: end;
+}
+
+.submission-filter-control {
+  display: grid;
+  gap: 6px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.submission-filter-control select {
+  width: 180px;
+}
+
+.dashboard-submissions-table {
+  min-width: 790px;
+  margin-top: 0;
+}
+
+.dashboard-submissions-table th {
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.admin-activity-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-activity-list li {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  color: #334155;
+  border-bottom: 1px solid #edf1f5;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.activity-marker {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: #2563eb;
+  background: #eaf2ff;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .dashboard-tasks-header {
   align-items: end;
   margin-bottom: 20px;
@@ -1131,6 +1284,28 @@ body.modal-open {
     align-items: stretch;
   }
 
+  .admin-command-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-student-search input {
+    width: 100%;
+  }
+
+  .admin-action-links {
+    justify-content: flex-start;
+  }
+
+  .admin-deadline-strip {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-activity-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .dashboard-task-form {
     width: 100%;
   }
@@ -1222,6 +1397,51 @@ body.modal-open {
 
   .dashboard-tasks-card {
     padding: 18px;
+  }
+
+  .admin-student-search,
+  .admin-deadline-form {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-student-search label {
+    margin-bottom: 2px;
+  }
+
+  .admin-student-search input,
+  .admin-student-search .btn,
+  .admin-deadline-form input,
+  .admin-deadline-form .btn {
+    width: 100%;
+  }
+
+  .admin-action-links {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-action-links .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .admin-deadline-strip {
+    padding: 18px;
+  }
+
+  .dashboard-submissions-card,
+  .dashboard-activity-card {
+    padding: 18px;
+  }
+
+  .card-header.dashboard-wide-header {
+    align-items: stretch;
+  }
+
+  .submission-filter-control select {
+    width: 100%;
   }
 
   .dashboard-task-form {

@@ -69,11 +69,26 @@
       </ul>
     </section>
 
-    <section class="grid">
-      <div class="card" data-role="admin">
-        <h3>Registration Deadline</h3>
-        <p class="muted">Set the last date students can submit course registration.</p>
-        <form id="registrationDeadlineForm" class="mini-form" style="margin-top: 12px;">
+    <section class="admin-command-bar" aria-label="Admin shortcuts">
+      <div class="admin-student-search">
+        <label for="adminStudentSearch">Find Student</label>
+        <input type="search" id="adminStudentSearch" placeholder="Enter student number" />
+        <button class="btn" id="adminStudentSearchBtn" type="button">Search</button>
+      </div>
+      <nav class="admin-action-links" aria-label="Management shortcuts">
+        <a class="btn btn-outline" href="users.html">Manage Users</a>
+        <a class="btn btn-outline" href="students.html">Manage Students</a>
+        <a class="btn btn-outline" href="catalog.html">Course Catalog</a>
+      </nav>
+    </section>
+
+    <section class="admin-deadline-strip" data-role="admin" aria-labelledby="deadlineControlTitle">
+      <div>
+        <span class="section-eyebrow">Academic control</span>
+        <h2 id="deadlineControlTitle">Registration Deadline</h2>
+        <p>Set the final date students can submit their course registration.</p>
+      </div>
+      <form id="registrationDeadlineForm" class="admin-deadline-form">
           <input
             type="date"
             id="adminRegistrationDeadline"
@@ -82,65 +97,52 @@
             required
           />
           <button class="btn" type="submit">Save Deadline</button>
-        </form>
-      </div>
-      <div class="card">
-        <h3>Find Student</h3>
-        <p class="muted">Jump to a student record by student number.</p>
-        <div class="mini-form" style="margin-top: 12px;">
-          <input type="text" id="adminStudentSearch" placeholder="e.g. 20/1234" />
-          <button class="btn" id="adminStudentSearchBtn" type="button">Search</button>
+      </form>
+    </section>
+
+    <section class="card dashboard-submissions-card" aria-labelledby="fileSubmissionsTitle">
+      <div class="card-header dashboard-wide-header">
+        <div>
+          <span class="section-eyebrow">Document review</span>
+          <h2 id="fileSubmissionsTitle">File Submissions</h2>
+          <p class="muted">Review student uploads and approve or reject them.</p>
         </div>
-      </div>
-      <div class="card">
-        <h3>File Submissions</h3>
-        <p class="muted">Review student uploads and approve or reject them.</p>
-        <div class="mini-form" style="margin-top: 12px;">
+        <label class="submission-filter-control">
+          <span>Status</span>
           <select id="submissionStatusFilter">
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
           </select>
-        </div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>File</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="submissionTableBody"></tbody>
-          </table>
-        </div>
-        <p class="muted" id="submissionEmpty">No submissions yet.</p>
+        </label>
       </div>
-      <div class="card">
-        <h3>System Status</h3>
-        <ul class="meta-list">
-          <li><span>Data Mode</span><strong id="systemDataMode">Local Offline</strong></li>
-          <li><span>Network</span><strong id="systemOnline">Online</strong></li>
-          <li><span>Checked</span><strong id="systemTimestamp">—</strong></li>
-        </ul>
+      <div class="table-wrap">
+        <table class="table dashboard-submissions-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>File</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="submissionTableBody"></tbody>
+        </table>
       </div>
-      <div class="card">
-        <h3>Recent Activity</h3>
-        <ul class="list" id="adminActivityList">
-          <li class="empty-state">No recent activity yet.</li>
-        </ul>
+      <p class="muted" id="submissionEmpty">No submissions yet.</p>
+    </section>
+
+    <section class="card dashboard-activity-card" aria-labelledby="recentActivityTitle">
+      <div class="dashboard-wide-header">
+        <span class="section-eyebrow">Audit trail</span>
+        <h2 id="recentActivityTitle">Recent Activity</h2>
+        <p class="muted">The latest changes across student, user, course, and registration records.</p>
       </div>
-      <div class="card">
-        <h3>Quick Links</h3>
-        <div class="actions">
-          <a class="btn btn-outline" href="users.html">Manage Users</a>
-          <a class="btn btn-outline" href="students.html">Manage Students</a>
-          <a class="btn btn-outline" href="catalog.html">Course Catalog</a>
-        </div>
-      </div>
+      <ul class="admin-activity-list" id="adminActivityList">
+        <li class="loading-inline">Loading activity...</li>
+      </ul>
     </section>
 
     <section class="card dashboard-tasks-card" aria-labelledby="dashboardTasksTitle">
