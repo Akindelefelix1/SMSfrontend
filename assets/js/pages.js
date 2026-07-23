@@ -652,6 +652,28 @@ if (registrationForm) {
   const registrationDepartment = document.getElementById("registrationDepartment");
   const registrationStudentNo = document.getElementById("registrationStudentNo");
   const generatedRegNo = document.getElementById("generatedRegNo");
+  const registrationDeadline = document.getElementById("registrationDeadline");
+
+  if (store && registrationDeadline) {
+    store
+      .getRegistrationSettings()
+      .then((settings) => {
+        const deadline = settings && settings.registrationDeadline;
+        if (!deadline) {
+          registrationDeadline.textContent = "Deadline: Not set";
+          return;
+        }
+        const formatted = new Date(`${deadline}T00:00:00`).toLocaleDateString(undefined, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
+        registrationDeadline.textContent = `Deadline: ${formatted}`;
+      })
+      .catch(() => {
+        registrationDeadline.textContent = "Deadline: Unavailable";
+      });
+  }
 
   const populateRegistrationStudents = async () => {
     if (!registrationDepartment || !registrationStudentNo || !store) return;
@@ -699,14 +721,14 @@ if (registrationForm) {
 
   if (checklist && store) {
     store.getCourseOptions().then((courses) => {
-      if (courses.length) {
-        checklist.innerHTML = courses
-          .map(
-            (course) =>
-              `<label><input type="checkbox" data-course="${course.label}" /> ${course.label}</label>`
-          )
-          .join("");
-      }
+      checklist.innerHTML = courses.length
+        ? courses
+            .map(
+              (course) =>
+                `<label><input type="checkbox" data-course="${escapeHtml(course.label)}" /> ${escapeHtml(course.label)}</label>`
+            )
+            .join("")
+        : '<p class="empty-state">No courses are currently available.</p>';
     });
   }
 
@@ -715,9 +737,9 @@ if (registrationForm) {
       const selected = Array.from(
         checklist.querySelectorAll("input[type='checkbox']:checked")
       ).map((input) => input.dataset.course);
-      selectedCoursesList.innerHTML = selected
-        .map((course) => `<li>${course}</li>`)
-        .join("");
+      selectedCoursesList.innerHTML = selected.length
+        ? selected.map((course) => `<li>${escapeHtml(course)}</li>`).join("")
+        : '<li class="empty-state">No courses selected yet.</li>';
     });
   }
 
@@ -728,6 +750,13 @@ if (registrationForm) {
       registrationForm.querySelectorAll("input[type='checkbox']:checked")
     ).map((input) => input.dataset.course);
     const studentNo = formData.get("studentNo") || (registrationStudentNo ? registrationStudentNo.value : "");
+
+    if (!courses.length) {
+      const message = "Select at least one course before submitting.";
+      showError(message);
+      flash(message);
+      return;
+    }
 
     try {
       const result = await postJson(
@@ -745,6 +774,35 @@ if (registrationForm) {
       if (generatedRegNo && regNo) generatedRegNo.value = regNo;
       clearError();
       flash(regNo ? `Registration saved. No: ${regNo}` : result.message || "Registration saved.");
+    } catch (err) {
+      showError(err.message);
+      flash(err.message);
+    }
+  });
+}
+
+const registrationDeadlineForm = document.getElementById("registrationDeadlineForm");
+if (registrationDeadlineForm && store) {
+  const deadlineInput = document.getElementById("adminRegistrationDeadline");
+
+  store
+    .getRegistrationSettings()
+    .then((settings) => {
+      if (deadlineInput) {
+        deadlineInput.value = settings && settings.registrationDeadline
+          ? settings.registrationDeadline
+          : "";
+      }
+    })
+    .catch((err) => showError(err.message || "Unable to load registration deadline."));
+
+  registrationDeadlineForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const deadline = deadlineInput ? deadlineInput.value : "";
+    try {
+      await store.updateRegistrationSettings({ registrationDeadline: deadline });
+      clearError();
+      flash("Registration deadline updated.");
     } catch (err) {
       showError(err.message);
       flash(err.message);

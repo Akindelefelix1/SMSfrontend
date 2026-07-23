@@ -61,6 +61,20 @@
     </section>
 
     <section class="grid">
+      <div class="card" data-role="admin">
+        <h3>Registration Deadline</h3>
+        <p class="muted">Set the last date students can submit course registration.</p>
+        <form id="registrationDeadlineForm" class="mini-form" style="margin-top: 12px;">
+          <input
+            type="date"
+            id="adminRegistrationDeadline"
+            name="registrationDeadline"
+            aria-label="Course registration deadline"
+            required
+          />
+          <button class="btn" type="submit">Save Deadline</button>
+        </form>
+      </div>
       <div class="card">
         <h3>Find Student</h3>
         <p class="muted">Jump to a student record by student number.</p>

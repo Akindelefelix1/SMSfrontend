@@ -155,6 +155,10 @@
   const deleteCourse = async (id) => (await deleteJson(`/api/courses/${id}`)).data;
 
   const addRegistration = async (payload) => (await postJson("/api/registrations", payload)).data;
+  const getRegistrationSettings = async () =>
+    (await getJson("/api/settings/registration")).data;
+  const updateRegistrationSettings = async (payload) =>
+    (await putJson("/api/settings/registration", payload)).data;
 
   const addResult = async (payload) => (await postJson("/api/results", payload)).data;
 
@@ -250,6 +254,8 @@
     updateCourse,
     deleteCourse,
     addRegistration,
+    getRegistrationSettings,
+    updateRegistrationSettings,
     addResult,
     addSubmission,
     reviewSubmission,

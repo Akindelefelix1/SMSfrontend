@@ -26,7 +26,7 @@
         <h1>Course Registration</h1>
         <p>Select your courses for the current semester.</p>
       </div>
-      <div class="pill">Deadline: 30 Apr 2026</div>
+      <div class="pill" id="registrationDeadline">Deadline: Loading…</div>
     </section>
 
     <form id="registrationForm">
@@ -70,17 +70,13 @@
         <div class="card">
           <h3>Available Courses</h3>
           <div class="checklist" id="courseChecklist">
-            <label><input type="checkbox" data-course="CSC 201 - Data Structures" /> CSC 201 - Data Structures</label>
-            <label><input type="checkbox" data-course="CSC 203 - Web Development" /> CSC 203 - Web Development</label>
-            <label><input type="checkbox" data-course="MTH 201 - Linear Algebra" /> MTH 201 - Linear Algebra</label>
-            <label><input type="checkbox" data-course="GST 201 - Entrepreneurship" /> GST 201 - Entrepreneurship</label>
+            <p class="loading-inline">Loading available courses…</p>
           </div>
         </div>
         <div class="card">
           <h3>Selected Courses</h3>
           <ul class="list" id="selectedCourses">
-            <li>CSC 201 - Data Structures</li>
-            <li>GST 201 - Entrepreneurship</li>
+            <li class="empty-state">No courses selected yet.</li>
           </ul>
           <button class="btn" type="submit">Submit Registration</button>
         </div>
