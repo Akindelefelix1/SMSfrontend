@@ -120,18 +120,6 @@
         <p class="muted" id="submissionEmpty">No submissions yet.</p>
       </div>
       <div class="card">
-        <h3>Tasks</h3>
-        <form id="taskForm" class="mini-form" style="margin-bottom: 12px;">
-          <input type="text" id="taskInput" placeholder="Add admin task" required />
-          <button class="btn" type="submit">Add Task</button>
-        </form>
-        <ul class="list" id="taskList">
-          <li>Approve course add/drop requests</li>
-          <li>Publish semester results</li>
-          <li>Update academic year settings</li>
-        </ul>
-      </div>
-      <div class="card">
         <h3>System Status</h3>
         <ul class="meta-list">
           <li><span>Data Mode</span><strong id="systemDataMode">Local Offline</strong></li>
@@ -152,6 +140,35 @@
           <a class="btn btn-outline" href="students.html">Manage Students</a>
           <a class="btn btn-outline" href="catalog.html">Course Catalog</a>
         </div>
+      </div>
+    </section>
+
+    <section class="card dashboard-tasks-card" aria-labelledby="dashboardTasksTitle">
+      <div class="card-header dashboard-tasks-header">
+        <div>
+          <span class="section-eyebrow">Work queue</span>
+          <h2 id="dashboardTasksTitle">Tasks</h2>
+          <p class="muted">Create, track, and complete administrative tasks.</p>
+        </div>
+        <form id="taskForm" class="dashboard-task-form">
+          <input type="text" id="taskInput" placeholder="Add a new admin task" aria-label="New task" required />
+          <button class="btn" type="submit">Add Task</button>
+        </form>
+      </div>
+      <div class="table-wrap">
+        <table class="table dashboard-task-table">
+          <thead>
+            <tr>
+              <th scope="col">Complete</th>
+              <th scope="col">Task</th>
+              <th scope="col">Status</th>
+              <th scope="col" class="task-action-heading">Action</th>
+            </tr>
+          </thead>
+          <tbody id="taskList">
+            <tr><td colspan="4" class="loading-inline">Loading tasks...</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </main>

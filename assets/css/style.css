@@ -518,6 +518,90 @@ body {
   margin: 7px 0 0;
 }
 
+.dashboard-tasks-card {
+  margin: 0 0 40px;
+  padding: 26px;
+}
+
+.dashboard-tasks-header {
+  align-items: end;
+  margin-bottom: 20px;
+}
+
+.dashboard-tasks-header h2 {
+  margin: 0;
+}
+
+.dashboard-tasks-header p {
+  margin: 7px 0 0;
+}
+
+.dashboard-task-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-task-form input {
+  width: min(320px, 36vw);
+}
+
+.dashboard-task-form .btn {
+  flex: 0 0 auto;
+}
+
+.dashboard-task-table {
+  margin-top: 0;
+}
+
+.dashboard-task-table th {
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dashboard-task-table th:first-child,
+.dashboard-task-table td:first-child {
+  width: 90px;
+  text-align: center;
+}
+
+.dashboard-task-table th:nth-child(3),
+.dashboard-task-table td:nth-child(3) {
+  width: 130px;
+}
+
+.dashboard-task-table .task-action-heading,
+.dashboard-task-table .task-action-cell {
+  width: 90px;
+  text-align: right;
+}
+
+.task-complete-control {
+  min-height: 36px;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.task-title {
+  color: #25364d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.task-row-completed .task-title {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.dashboard-task-empty {
+  padding: 30px !important;
+  text-align: center !important;
+}
+
 .recent-registration-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1043,6 +1127,18 @@ body.modal-open {
     width: 100%;
   }
 
+  .dashboard-tasks-header {
+    align-items: stretch;
+  }
+
+  .dashboard-task-form {
+    width: 100%;
+  }
+
+  .dashboard-task-form input {
+    width: 100%;
+  }
+
   .form-grid {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
   }
@@ -1122,6 +1218,23 @@ body.modal-open {
 
   .dashboard-recent-card {
     margin-top: 0;
+  }
+
+  .dashboard-tasks-card {
+    padding: 18px;
+  }
+
+  .dashboard-task-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-task-form .btn {
+    width: 100%;
+  }
+
+  .dashboard-task-table {
+    min-width: 620px;
   }
 
   .dashboard-section-header {

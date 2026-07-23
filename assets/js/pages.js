@@ -1520,18 +1520,31 @@ if (dashboardStats) {
       ? normalized
           .map(
             (item) => `
-              <li>
-                <div class="actions" style="justify-content: space-between; width: 100%;">
-                  <label class="inline" style="margin: 0;">
-                    <input type="checkbox" data-task-toggle="${item.id}" ${item.completed ? "checked" : ""} ${item.id ? "" : "disabled"} />
-                    <span style="${item.completed ? "text-decoration: line-through;" : ""}">${escapeHtml(item.text)}</span>
+              <tr class="${item.completed ? "task-row-completed" : ""}">
+                <td>
+                  <label class="task-complete-control">
+                    <input
+                      type="checkbox"
+                      data-task-toggle="${item.id}"
+                      aria-label="${item.completed ? "Mark task as pending" : "Mark task as complete"}"
+                      ${item.completed ? "checked" : ""}
+                      ${item.id ? "" : "disabled"}
+                    />
                   </label>
-                  <button class="btn btn-outline" type="button" data-task-delete="${item.id}" ${item.id ? "" : "disabled"}>Delete</button>
-                </div>
-              </li>`
+                </td>
+                <td><span class="task-title">${escapeHtml(item.text)}</span></td>
+                <td>
+                  <span class="status-badge ${item.completed ? "status-accepted" : "status-pending"}">
+                    ${item.completed ? "Completed" : "Pending"}
+                  </span>
+                </td>
+                <td class="task-action-cell">
+                  <button class="btn btn-outline btn-danger btn-sm" type="button" data-task-delete="${item.id}" ${item.id ? "" : "disabled"}>Delete</button>
+                </td>
+              </tr>`
           )
           .join("")
-      : "<li>No tasks yet.</li>";
+      : '<tr><td colspan="4" class="empty-state dashboard-task-empty">No tasks yet. Add one using the form above.</td></tr>';
   };
 
   const renderDashboard = (data) => {
@@ -1591,6 +1604,9 @@ if (dashboardStats) {
     if (recentList) {
       recentList.innerHTML = loadingListItem("Loading registrations...");
     }
+    if (taskList) {
+      taskList.innerHTML = loadingTableRow(4, "Loading tasks...");
+    }
     try {
       const data = await withLoading(
         () =>
@@ -1611,6 +1627,10 @@ if (dashboardStats) {
       });
       showError(err.message || "Dashboard unavailable.");
       flash(err.message || "Dashboard unavailable.");
+      if (taskList) {
+        taskList.innerHTML =
+          '<tr><td colspan="4" class="empty-state dashboard-task-empty">Unable to load tasks.</td></tr>';
+      }
     }
   };
 
