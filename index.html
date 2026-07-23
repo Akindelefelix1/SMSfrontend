@@ -3,52 +3,162 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Manage student profiles, course registration, results, and academic reporting in one secure platform." />
   <title>Student Management System</title>
   <script src="assets/js/config.js"></script>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
-<body>
-  <header class="site-header">
-    <div class="container">
-      <h1>Student Management System</h1>
-      <p>Course registration, results processing, and student profile management.</p>
+<body class="landing-page">
+  <header class="landing-nav">
+    <div class="landing-shell landing-nav-inner">
+      <a class="landing-brand" href="index.html" aria-label="Student Management System home">
+        <span class="landing-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5-9-5Zm3 3.5V17c3.6 2.7 8.4 2.7 12 0v-4.5M21 10v6" /></svg>
+        </span>
+        <span>Student Management System</span>
+      </a>
+      <nav class="landing-links" aria-label="Primary navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a class="landing-login-link" href="login.html">Sign in</a>
+      </nav>
     </div>
   </header>
 
-  <main class="container">
-    <section class="card">
-      <h2>Quick Actions</h2>
-      <div class="actions">
-        <a class="btn" href="login.html">Student Login</a>
-        <a class="btn btn-outline" href="login.html">Admin Login</a>
-        <a class="btn btn-outline" href="registration.html">Register Courses</a>
-        <a class="btn btn-outline" href="results.html">View Results</a>
+  <main>
+    <section class="landing-hero">
+      <div class="landing-shell landing-hero-grid">
+        <div class="landing-hero-copy">
+          <div class="landing-eyebrow">
+            <span class="landing-eyebrow-dot" aria-hidden="true"></span>
+            One platform for your academic journey
+          </div>
+          <h1>Everything students need, <span>all in one place.</span></h1>
+          <p class="landing-hero-text">A simple, secure way to manage student profiles, register courses, track results, and keep academic records up to date.</p>
+          <div class="landing-hero-actions">
+            <a class="landing-btn landing-btn-primary" href="login.html">
+              Get started
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5" /></svg>
+            </a>
+            <a class="landing-btn landing-btn-secondary" href="#features">Explore features</a>
+          </div>
+          <div class="landing-trust">
+            <div class="landing-avatars" aria-hidden="true">
+              <span>A</span><span>O</span><span>I</span>
+            </div>
+            <p><strong>Built for every campus</strong><br />Students, faculty, and administrators</p>
+          </div>
+        </div>
+
+        <div class="landing-visual">
+          <div class="landing-image-frame">
+            <img src="assets/images/student-management-hero.png" alt="University students managing courses and academic progress using a laptop and tablet" width="1536" height="1024" fetchpriority="high" />
+          </div>
+          <div class="landing-float-card landing-float-results">
+            <span class="landing-float-icon">
+              <svg viewBox="0 0 24 24"><path d="M5 12.5 9.5 17 19 7.5" /></svg>
+            </span>
+            <span><strong>Results published</strong><small>Academic record updated</small></span>
+          </div>
+          <div class="landing-float-card landing-float-courses">
+            <span class="landing-progress-ring">75%</span>
+            <span><strong>Course registration</strong><small>3 of 4 steps complete</small></span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="card">
-        <h3>Student Profile</h3>
-        <p>Manage biodata, contact information, and academic details.</p>
+    <section class="landing-proof" aria-label="Platform benefits">
+      <div class="landing-shell landing-proof-grid">
+        <div><strong>One secure portal</strong><span>for every academic task</span></div>
+        <div><strong>Real-time access</strong><span>to courses and results</span></div>
+        <div><strong>Clear oversight</strong><span>for administrators</span></div>
       </div>
-      <div class="card">
-        <h3>Course Registration</h3>
-        <p>Register courses by semester and track registration deadlines.</p>
+    </section>
+
+    <section class="landing-section" id="features">
+      <div class="landing-shell">
+        <div class="landing-section-heading">
+          <span class="landing-kicker">Everything you need</span>
+          <h2>Academic management made simple</h2>
+          <p>Move through every part of the academic experience with tools designed to be clear, fast, and dependable.</p>
+        </div>
+
+        <div class="landing-feature-grid">
+          <a class="landing-feature-card" href="login.html">
+            <span class="landing-feature-icon landing-icon-blue">
+              <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-3v6m3-3h-6" /></svg>
+            </span>
+            <h3>Student profiles</h3>
+            <p>Keep biodata, department, level, and academic information organized in one profile.</p>
+            <span class="landing-card-link">Manage profile <span aria-hidden="true">→</span></span>
+          </a>
+
+          <a class="landing-feature-card" href="registration.html">
+            <span class="landing-feature-icon landing-icon-violet">
+              <svg viewBox="0 0 24 24"><path d="M6 2v4m12-4v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm3 9h3v3H8v-3Z" /></svg>
+            </span>
+            <h3>Course registration</h3>
+            <p>Select courses by semester, confirm your choices, and stay ahead of deadlines.</p>
+            <span class="landing-card-link">Register courses <span aria-hidden="true">→</span></span>
+          </a>
+
+          <a class="landing-feature-card" href="results.html">
+            <span class="landing-feature-icon landing-icon-green">
+              <svg viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" /></svg>
+            </span>
+            <h3>Results &amp; GPA</h3>
+            <p>View published results and understand GPA and CGPA performance at a glance.</p>
+            <span class="landing-card-link">View results <span aria-hidden="true">→</span></span>
+          </a>
+
+          <a class="landing-feature-card" href="login.html">
+            <span class="landing-feature-icon landing-icon-amber">
+              <svg viewBox="0 0 24 24"><path d="M4 21V10l8-6 8 6v11M9 21v-6h6v6M2 21h20" /></svg>
+            </span>
+            <h3>Admin control</h3>
+            <p>Manage users, departments, courses, reports, and academic operations efficiently.</p>
+            <span class="landing-card-link">Admin sign in <span aria-hidden="true">→</span></span>
+          </a>
+        </div>
       </div>
-      <div class="card">
-        <h3>Results & GPA</h3>
-        <p>Automatic result computation with GPA/CGPA breakdown.</p>
+    </section>
+
+    <section class="landing-flow-section" id="how-it-works">
+      <div class="landing-shell landing-flow">
+        <div>
+          <span class="landing-kicker">A smoother workflow</span>
+          <h2>From sign-in to success in three simple steps</h2>
+        </div>
+        <ol class="landing-steps">
+          <li><span>01</span><div><strong>Sign in securely</strong><p>Access the right dashboard for your student or administrator role.</p></div></li>
+          <li><span>02</span><div><strong>Complete your task</strong><p>Register courses, update records, or manage academic data.</p></div></li>
+          <li><span>03</span><div><strong>Track your progress</strong><p>See clear confirmations, results, and academic insights.</p></div></li>
+        </ol>
       </div>
-      <div class="card">
-        <h3>Admin Dashboard</h3>
-        <p>Control users, academic years, departments, and reports.</p>
+    </section>
+
+    <section class="landing-cta-section">
+      <div class="landing-shell landing-cta">
+        <div>
+          <span class="landing-kicker">Ready when you are</span>
+          <h2>Your academic journey, better organized.</h2>
+          <p>Sign in to access your courses, results, profile, and more.</p>
+        </div>
+        <a class="landing-btn landing-btn-light" href="login.html">Go to your portal <span aria-hidden="true">→</span></a>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <small>Student Management System &copy; 2026</small>
+  <footer class="landing-footer">
+    <div class="landing-shell landing-footer-inner">
+      <a class="landing-brand landing-brand-footer" href="index.html">
+        <span class="landing-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5-9-5Zm3 3.5V17c3.6 2.7 8.4 2.7 12 0v-4.5M21 10v6" /></svg>
+        </span>
+        <span>Student Management System</span>
+      </a>
+      <p>&copy; 2026 Student Management System. All rights reserved.</p>
     </div>
   </footer>
 
