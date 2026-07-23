@@ -60,6 +60,19 @@ const buildNav = (role) => {
   const nav = document.querySelector(".nav");
   if (!nav) return;
 
+  const useSidebar = Boolean(role && role !== "guest");
+  const navIcons = {
+    "dashboard.html": '<svg viewBox="0 0 24 24"><path d="M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z" /></svg>',
+    "student-dashboard.html": '<svg viewBox="0 0 24 24"><path d="M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z" /></svg>',
+    "students.html": '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-4h4m-2-2v4" /></svg>',
+    "registrations.html": '<svg viewBox="0 0 24 24"><path d="M6 2v4m12-4v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm4 10 2 2 4-4" /></svg>',
+    "registration.html": '<svg viewBox="0 0 24 24"><path d="M6 2v4m12-4v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Zm4 10 2 2 4-4" /></svg>',
+    "users.html": '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM19 8v6m3-3h-6" /></svg>',
+    "catalog.html": '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Zm0 0A2.5 2.5 0 0 0 6.5 22H20v-5" /></svg>',
+    "reports.html": '<svg viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H2" /></svg>',
+    "results.html": '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8l-6-6Zm0 0v6h6M8 13h8m-8 4h6" /></svg>',
+    "login.html": '<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5m5 5H3m11-9h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" /></svg>',
+  };
   const links = [];
   const isAdmin = role === "admin" || role === "super_admin";
   if (isAdmin) {
@@ -83,13 +96,22 @@ const buildNav = (role) => {
   }
 
   nav.innerHTML = links
-    .map((item) => `<a href="${item.href}">${item.label}</a>`)
+    .map(
+      (item) =>
+        `<a href="${item.href}">${useSidebar ? `<span class="nav-icon" aria-hidden="true">${navIcons[item.href] || ""}</span>` : ""}<span>${item.label}</span></a>`
+    )
     .join("");
 
   if (role && role !== "guest") {
     const logout = document.createElement("a");
     logout.href = "#";
-    logout.textContent = "Logout";
+    logout.className = "nav-logout";
+    logout.innerHTML = `
+      <span class="nav-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5m5 5H3m11-9h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" /></svg>
+      </span>
+      <span>Logout</span>
+    `;
     logout.setAttribute("data-logout", "true");
     nav.appendChild(logout);
   }
@@ -99,8 +121,48 @@ const buildNav = (role) => {
     const href = link.getAttribute("href");
     if (href === current) {
       link.classList.add("active");
+      link.setAttribute("aria-current", "page");
     }
   });
+
+  document.body.classList.toggle("has-sidebar", useSidebar);
+  if (!useSidebar) return;
+
+  const topbar = document.querySelector(".topbar");
+  if (!topbar || document.querySelector(".sidebar-toggle")) return;
+
+  topbar.id = "appSidebar";
+  const toggle = document.createElement("button");
+  toggle.className = "sidebar-toggle";
+  toggle.type = "button";
+  toggle.setAttribute("aria-label", "Open navigation menu");
+  toggle.setAttribute("aria-controls", "appSidebar");
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.innerHTML = "<span></span><span></span><span></span>";
+
+  const overlay = document.createElement("button");
+  overlay.className = "sidebar-overlay";
+  overlay.type = "button";
+  overlay.setAttribute("aria-label", "Close navigation menu");
+
+  const setSidebarOpen = (isOpen) => {
+    document.body.classList.toggle("sidebar-open", isOpen);
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    toggle.setAttribute("aria-label", isOpen ? "Close navigation menu" : "Open navigation menu");
+  };
+
+  toggle.addEventListener("click", () => {
+    setSidebarOpen(!document.body.classList.contains("sidebar-open"));
+  });
+  overlay.addEventListener("click", () => setSidebarOpen(false));
+  nav.addEventListener("click", (event) => {
+    if (event.target.closest("a")) setSidebarOpen(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setSidebarOpen(false);
+  });
+
+  document.body.append(toggle, overlay);
 };
 
 const applyRoleVisibility = (role) => {
@@ -287,14 +349,14 @@ const renderStudentDashboard = async () => {
   const root = document.getElementById("studentDashboard");
   if (!root) return;
 
-  const registeredCoursesList = document.getElementById("registeredCoursesList");
-  if (registeredCoursesList) {
-    registeredCoursesList.innerHTML = loadingListItem("Loading courses...");
+  const registeredCoursesBody = document.getElementById("registeredCoursesBody");
+  if (registeredCoursesBody) {
+    registeredCoursesBody.innerHTML = loadingTableRow(4, "Loading courses...");
   }
 
-  const recentResultsList = document.getElementById("recentResultsList");
-  if (recentResultsList) {
-    recentResultsList.innerHTML = loadingListItem("Loading results...");
+  const recentResultsBody = document.getElementById("recentResultsBody");
+  if (recentResultsBody) {
+    recentResultsBody.innerHTML = loadingTableRow(4, "Loading results...");
   }
 
   const trendList = document.getElementById("gpaTrendList");
@@ -316,6 +378,7 @@ const renderStudentDashboard = async () => {
   }
 
   const student = payload.student;
+  const profile = payload.profile || student || {};
   const registrations = payload.registrations || [];
   const results = payload.results || [];
 
@@ -324,11 +387,23 @@ const renderStudentDashboard = async () => {
     if (node) node.textContent = value;
   };
 
-  setText("studentName", student ? student.name : "Student");
+  const studentName = profile.name || "Student";
+  const initials = studentName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  setText("studentName", studentName);
   setText("studentNo", studentNo || "—");
-  setText("studentDepartment", student ? student.department : "—");
-  setText("studentLevel", student ? student.level : "—");
-  setText("studentStatus", student ? student.status : "—");
+  setText("studentProfileNo", studentNo || "—");
+  setText("studentDepartment", profile.department || "—");
+  setText("studentLevel", profile.level || "—");
+  setText("studentStatus", profile.status || "—");
+  setText("studentProfileStatus", profile.status || "—");
+  setText("studentInitials", initials || "ST");
 
   setText("registrationCount", String(registrations.length || 0));
   setText("resultsCount", String(results.length || 0));
@@ -353,22 +428,43 @@ const renderStudentDashboard = async () => {
     }
   }
 
-  if (registeredCoursesList) {
+  if (registeredCoursesBody) {
     if (latestRegistration && latestRegistration.courses.length) {
-      registeredCoursesList.innerHTML = latestRegistration.courses
-        .slice(0, 4)
-        .map((course) => `<li>${course}</li>`)
+      registeredCoursesBody.innerHTML = latestRegistration.courses
+        .map((course, index) => {
+          const parts = String(course).split(" - ");
+          const code = parts.shift() || course;
+          const title = parts.join(" - ") || "Course";
+          return `
+            <tr>
+              <td>${index + 1}</td>
+              <td><strong>${escapeHtml(code)}</strong></td>
+              <td>${escapeHtml(title)}</td>
+              <td><span class="status-badge status-accepted">Registered</span></td>
+            </tr>`;
+        })
         .join("");
     } else {
-      registeredCoursesList.innerHTML = '<li class="empty-state">No courses registered yet.</li>';
+      registeredCoursesBody.innerHTML =
+        '<tr><td colspan="4" class="empty-state student-table-empty">No courses registered for the current semester.</td></tr>';
     }
   }
 
-  if (recentResultsList) {
+  if (recentResultsBody) {
     const recent = Array.isArray(payload.latestResults) ? payload.latestResults : [];
-    recentResultsList.innerHTML = recent.length
-      ? recent.map((row) => `<li>${row.course} · ${row.total} (${row.grade})</li>`).join("")
-      : '<li class="empty-state">No results published yet.</li>';
+    recentResultsBody.innerHTML = recent.length
+      ? recent
+          .map(
+            (row) => `
+              <tr>
+                <td><strong>${escapeHtml(row.course)}</strong></td>
+                <td>${escapeHtml(`${row.academicYear} · ${row.semester}`)}</td>
+                <td>${escapeHtml(row.total)}</td>
+                <td><span class="student-grade grade-${escapeHtml(String(row.grade).toLowerCase())}">${escapeHtml(row.grade)}</span></td>
+              </tr>`
+          )
+          .join("")
+      : '<tr><td colspan="4" class="empty-state student-table-empty">No results have been published yet.</td></tr>';
   }
 
   if (trendList) {
@@ -385,8 +481,16 @@ const renderStudentDashboard = async () => {
       .reverse();
 
     trendList.innerHTML = sorted.length
-      ? sorted.map((item) => `<li>${item.term} · GPA ${item.gpa}</li>`).join("")
-      : '<li class="empty-state">No GPA history yet.</li>';
+      ? sorted
+          .map(
+            (item) => `
+              <li>
+                <span><strong>${escapeHtml(item.term)}</strong><small>Semester performance</small></span>
+                <b>${escapeHtml(item.gpa)}</b>
+              </li>`
+          )
+          .join("")
+      : '<li class="empty-state">No GPA history available yet.</li>';
   }
 };
 
@@ -487,8 +591,6 @@ document.addEventListener("click", async (event) => {
   clearSession();
   window.location.replace("login.html");
 });
-
-bootNavigation();
 
 window.addEventListener("pageshow", () => {
   if (!getSession() && isProtectedPage()) {
@@ -620,15 +722,43 @@ const renderSubmissionPreview = (container, file, dataUrl) => {
 const renderStudentSubmissions = async () => {
   const list = document.getElementById("submissionList");
   if (!list || !store) return;
+  const isTable = list.tagName === "TBODY";
   const session = getSession();
   const studentNo = session ? String(session.username || "").trim() : "";
   if (!studentNo) {
-    list.innerHTML = '<li class="empty-state">Log in as a student to view submissions.</li>';
+    list.innerHTML = isTable
+      ? '<tr><td colspan="3" class="empty-state student-table-empty">Log in as a student to view submissions.</td></tr>'
+      : '<li class="empty-state">Log in as a student to view submissions.</li>';
     return;
   }
 
-  list.innerHTML = loadingListItem("Loading submissions...");
+  list.innerHTML = isTable
+    ? loadingTableRow(3, "Loading submissions...")
+    : loadingListItem("Loading submissions...");
   const rows = await withLoading(() => store.getStudentSubmissions(), "Loading submissions...");
+  if (isTable) {
+    list.innerHTML = rows.length
+      ? rows
+          .slice(0, 6)
+          .map((item) => {
+            const statusClass = `status-${String(item.status || "pending").toLowerCase()}`;
+            return `
+              <tr>
+                <td>
+                  <strong>${escapeHtml(item.fileName)}</strong>
+                  <small class="table-secondary">${escapeHtml(item.fileType)} · ${formatBytes(item.fileSize)}</small>
+                </td>
+                <td>${escapeHtml(formatSessionDate(item.submittedAt))}</td>
+                <td>
+                  <span class="status-badge ${statusClass}">${escapeHtml(item.status || "Pending")}</span>
+                  ${item.reviewNote ? `<small class="table-secondary">${escapeHtml(item.reviewNote)}</small>` : ""}
+                </td>
+              </tr>`;
+          })
+          .join("")
+      : '<tr><td colspan="3" class="empty-state student-table-empty">No documents submitted yet.</td></tr>';
+    return;
+  }
   list.innerHTML = rows.length
     ? rows
         .map((item) => {
@@ -1617,3 +1747,5 @@ if (allRegistrationsBody && store) {
 
   loadRegistrations();
 }
+
+bootNavigation();

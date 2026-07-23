@@ -7,130 +7,186 @@
   <script src="assets/js/config.js"></script>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
-<body class="page">
+<body class="page student-dashboard-page">
   <header class="topbar">
     <div class="container">
       <a class="brand" href="index.html">Student Management System</a>
-      <nav class="nav">
-      </nav>
+      <nav class="nav" aria-label="Student navigation"></nav>
     </div>
   </header>
 
   <main class="container" id="studentDashboard">
-    <section class="hero">
+    <section class="student-welcome">
       <div>
-        <h1>Student Dashboard</h1>
-        <p>Quick access to course registration and semester results.</p>
+        <span class="section-eyebrow">Student portal</span>
+        <h1>Welcome back, <span id="studentName">Student</span></h1>
+        <p>Here is a clear overview of your current academic progress.</p>
         <div class="hero-meta">
-          <span>Welcome, <strong id="studentName">Student</strong></span>
-          <span class="muted">Last login: <span data-session="lastLogin">—</span></span>
+          <span>Student No: <strong id="studentNo">—</strong></span>
+          <span>Last login: <strong data-session="lastLogin">—</strong></span>
         </div>
       </div>
-      <a class="btn btn-outline" href="registration.html">Start Registration</a>
-    </section>
-
-    <section class="stats">
-      <div class="stat">
-        <h3 id="registrationCount">0</h3>
-        <p>Registrations</p>
-      </div>
-      <div class="stat">
-        <h3 id="registeredUnits">0</h3>
-        <p>Total Units</p>
-      </div>
-      <div class="stat">
-        <h3 id="resultsCount">0</h3>
-        <p>Results Published</p>
-      </div>
-      <div class="stat">
-        <h3 id="pendingResults">0</h3>
-        <p>Pending Results</p>
-      </div>
-      <div class="stat">
-        <h3 id="studentGpa">0.00</h3>
-        <p>GPA</p>
-      </div>
-      <div class="stat">
-        <h3 id="studentCgpa">0.00</h3>
-        <p>CGPA</p>
+      <div class="student-welcome-actions">
+        <span class="student-status-pill" id="studentStatus">Loading</span>
+        <a class="btn" href="registration.html">Register Courses</a>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="card">
-        <h3>Registration</h3>
-        <p>Pick courses for the current semester and submit your registration.</p>
-        <div class="actions">
-          <a class="btn" href="registration.html">Register Courses</a>
-        </div>
+    <section class="student-metrics" aria-label="Academic summary">
+      <article class="student-metric">
+        <span class="student-metric-icon metric-blue" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M6 2v4m12-4v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z" /></svg>
+        </span>
+        <div><strong id="registrationCount">0</strong><span>Registrations</span></div>
+      </article>
+      <article class="student-metric">
+        <span class="student-metric-icon metric-violet" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14Zm0 0A2.5 2.5 0 0 0 6.5 22H20v-5" /></svg>
+        </span>
+        <div><strong id="registeredUnits">0</strong><span>Registered Units</span></div>
+      </article>
+      <article class="student-metric">
+        <span class="student-metric-icon metric-green" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>
+        </span>
+        <div><strong id="resultsCount">0</strong><span>Results Published</span></div>
+      </article>
+      <article class="student-metric">
+        <span class="student-metric-icon metric-amber" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9Z" /></svg>
+        </span>
+        <div><strong id="pendingResults">0</strong><span>Pending Results</span></div>
+      </article>
+      <article class="student-metric metric-emphasis">
+        <div><strong id="studentGpa">0.00</strong><span>Current GPA</span></div>
+      </article>
+      <article class="student-metric metric-emphasis">
+        <div><strong id="studentCgpa">0.00</strong><span>Cumulative GPA</span></div>
+      </article>
+    </section>
+
+    <section class="student-dashboard-layout">
+      <div class="student-dashboard-main">
+        <article class="card student-panel">
+          <div class="card-header student-panel-header">
+            <div>
+              <span class="section-eyebrow">Current semester</span>
+              <h2>Registered Courses</h2>
+              <p class="muted" id="registrationStatus">No registration submitted yet.</p>
+            </div>
+            <a class="btn btn-outline btn-sm" href="registration.html">Manage registration</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table student-data-table">
+              <thead>
+                <tr><th>#</th><th>Course Code</th><th>Course Title</th><th>Status</th></tr>
+              </thead>
+              <tbody id="registeredCoursesBody">
+                <tr><td colspan="4" class="loading-inline">Loading courses...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="card student-panel">
+          <div class="card-header student-panel-header">
+            <div>
+              <span class="section-eyebrow">Latest updates</span>
+              <h2>Recent Results</h2>
+              <p class="muted">Your three most recently published results.</p>
+            </div>
+            <a class="btn btn-outline btn-sm" href="results.html">View all results</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table student-data-table">
+              <thead>
+                <tr><th>Course</th><th>Session</th><th>Total</th><th>Grade</th></tr>
+              </thead>
+              <tbody id="recentResultsBody">
+                <tr><td colspan="4" class="loading-inline">Loading results...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
       </div>
-      <div class="card">
-        <h3>File Submission</h3>
-        <p class="muted">Submit documents for admin review.</p>
-        <form id="submissionForm" class="form" style="margin-top: 12px;">
+
+      <aside class="student-dashboard-aside">
+        <article class="card student-profile-card">
+          <div class="student-profile-heading">
+            <span class="student-avatar" id="studentInitials" aria-hidden="true">ST</span>
+            <div><h2>My Profile</h2><p>Academic information</p></div>
+          </div>
+          <dl class="student-profile-list">
+            <div><dt>Department</dt><dd id="studentDepartment">—</dd></div>
+            <div><dt>Level</dt><dd id="studentLevel">—</dd></div>
+            <div><dt>Student Number</dt><dd id="studentProfileNo">—</dd></div>
+            <div><dt>Account Status</dt><dd id="studentProfileStatus">—</dd></div>
+          </dl>
+        </article>
+
+        <article class="card student-panel">
+          <span class="section-eyebrow">Performance</span>
+          <h2>GPA History</h2>
+          <ul class="student-trend-list" id="gpaTrendList">
+            <li class="loading-inline">Loading GPA history...</li>
+          </ul>
+        </article>
+
+        <article class="card student-panel">
+          <span class="section-eyebrow">Quick access</span>
+          <h2>Useful Links</h2>
+          <div class="student-quick-links">
+            <a href="registration.html"><span>Course Registration</span><b aria-hidden="true">→</b></a>
+            <a href="results.html"><span>Semester Results</span><b aria-hidden="true">→</b></a>
+          </div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="student-documents-grid">
+      <article class="card student-panel">
+        <div class="student-panel-header">
+          <span class="section-eyebrow">Document center</span>
+          <h2>Submit a Document</h2>
+          <p class="muted">Upload a PDF, image, or Word document for administrator review.</p>
+        </div>
+        <form id="submissionForm" class="form student-upload-form">
           <label>
             <span>Select File</span>
             <input type="file" id="submissionFile" name="submissionFile" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" required />
+            <small>Maximum file size: 2 MB</small>
           </label>
           <label>
-            <span>Note (Optional)</span>
-            <input type="text" id="submissionNote" name="note" placeholder="Short description" />
+            <span>Note <em>(Optional)</em></span>
+            <input type="text" id="submissionNote" name="note" placeholder="What is this document for?" />
           </label>
           <div id="submissionPreview" class="file-preview"></div>
-          <div class="actions" style="margin-top: 12px;">
-            <button class="btn" type="submit">Submit File</button>
-          </div>
+          <button class="btn" type="submit">Submit for Review</button>
         </form>
-      </div>
-      <div class="card">
-        <h3>Profile</h3>
-        <ul class="meta-list">
-          <li><span>Student No</span><strong id="studentNo">—</strong></li>
-          <li><span>Department</span><strong id="studentDepartment">—</strong></li>
-          <li><span>Level</span><strong id="studentLevel">—</strong></li>
-          <li><span>Status</span><strong id="studentStatus">—</strong></li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>My Submissions</h3>
-        <ul class="list" id="submissionList">
-          <li class="empty-state">No submissions yet.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Results</h3>
-        <p>Check GPA and CGPA summaries as soon as results are published.</p>
-        <div class="actions">
-          <a class="btn btn-outline" href="results.html">View Results</a>
+      </article>
+
+      <article class="card student-panel student-submissions-panel">
+        <div class="student-panel-header">
+          <span class="section-eyebrow">Submission history</span>
+          <h2>My Documents</h2>
+          <p class="muted">Track the review status of your submitted files.</p>
         </div>
-      </div>
-      <div class="card">
-        <h3>Registration Status</h3>
-        <p class="muted" id="registrationStatus">No registration submitted yet.</p>
-        <ul class="list" id="registeredCoursesList">
-          <li class="empty-state">No courses registered yet.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Recent Results</h3>
-        <ul class="list" id="recentResultsList">
-          <li class="empty-state">No results published yet.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>GPA Trend</h3>
-        <ul class="list" id="gpaTrendList">
-          <li class="empty-state">No GPA history yet.</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>Announcements</h3>
-        <ul class="list">
-          <li>Registration closes on 30 Apr 2026.</li>
-          <li>Results publish after department approval.</li>
-          <li>Contact support for profile updates.</li>
-        </ul>
-      </div>
+        <div class="table-wrap">
+          <table class="table student-data-table">
+            <thead>
+              <tr><th>Document</th><th>Submitted</th><th>Status</th></tr>
+            </thead>
+            <tbody id="submissionList">
+              <tr><td colspan="3" class="loading-inline">Loading submissions...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="student-notice" aria-label="Important information">
+      <strong>Keep your records current.</strong>
+      <p>Register before the deadline and contact your administrator if any profile or result information needs correction.</p>
     </section>
   </main>
 
