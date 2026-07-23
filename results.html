@@ -120,22 +120,6 @@
             </select>
           </label>
           <label>
-            <span>Program</span>
-            <input type="text" name="program" placeholder="B.Sc Computer Science" />
-          </label>
-          <label>
-            <span>Course ID</span>
-            <input type="number" name="courseId" placeholder="e.g. 1" />
-          </label>
-          <label>
-            <span>Min Total</span>
-            <input type="number" name="minTotal" placeholder="50" />
-          </label>
-          <label>
-            <span>Max Total</span>
-            <input type="number" name="maxTotal" placeholder="100" />
-          </label>
-          <label>
             <span>Sort By</span>
             <select name="sort">
               <option value="course_code">Course Code</option>
@@ -174,47 +158,18 @@
         </thead>
         <tbody id="resultsBody">
           <tr>
-            <td>CSC 201</td>
-            <td>3</td>
-            <td>25</td>
-            <td>62</td>
-            <td>87</td>
-            <td>A</td>
-          </tr>
-          <tr>
-            <td>CSC 203</td>
-            <td>2</td>
-            <td>22</td>
-            <td>58</td>
-            <td>80</td>
-            <td>A</td>
-          </tr>
-          <tr>
-            <td>MTH 201</td>
-            <td>3</td>
-            <td>18</td>
-            <td>52</td>
-            <td>70</td>
-            <td>B</td>
-          </tr>
-          <tr>
-            <td>GST 201</td>
-            <td>2</td>
-            <td>20</td>
-            <td>50</td>
-            <td>70</td>
-            <td>B</td>
+            <td colspan="6">Select a student and fetch their results.</td>
           </tr>
         </tbody>
       </table>
       <div class="summary">
         <div>
           <h3>GPA</h3>
-          <p id="gpaValue">4.45</p>
+          <p id="gpaValue">—</p>
         </div>
         <div>
           <h3>CGPA</h3>
-          <p id="cgpaValue">4.12</p>
+          <p id="cgpaValue">—</p>
         </div>
       </div>
       <div class="pager">

@@ -776,24 +776,25 @@ let lastResultsPayload = null;
 
 const renderResults = (data) => {
   if (!resultsBody) return;
-  resultsBody.innerHTML = data.results.length
-    ? data.results
+  const rows = Array.isArray(data && data.results) ? data.results : [];
+  resultsBody.innerHTML = rows.length
+    ? rows
         .map(
           (row) => `
           <tr>
-            <td>${row.course}</td>
-            <td>${row.unit}</td>
-            <td>${row.ca}</td>
-            <td>${row.exam}</td>
-            <td>${row.total}</td>
-            <td>${row.grade}</td>
+            <td>${escapeHtml(row.course)}</td>
+            <td>${escapeHtml(row.unit)}</td>
+            <td>${escapeHtml(row.ca)}</td>
+            <td>${escapeHtml(row.exam)}</td>
+            <td>${escapeHtml(row.total)}</td>
+            <td>${escapeHtml(row.grade)}</td>
           </tr>`
         )
         .join("")
-    : '<tr><td colspan="6">No results found.</td></tr>';
+    : '<tr><td colspan="6">No saved results found for this student and semester.</td></tr>';
 
-  if (gpaValue) gpaValue.textContent = data.gpa;
-  if (cgpaValue) cgpaValue.textContent = data.cgpa;
+  if (gpaValue) gpaValue.textContent = rows.length && data.gpa != null ? data.gpa : "—";
+  if (cgpaValue) cgpaValue.textContent = rows.length && data.cgpa != null ? data.cgpa : "—";
 
   if (resultsPageInfo && data.meta) {
     resultsPageInfo.textContent = `Page ${data.meta.page} of ${data.meta.pages}`;
@@ -804,11 +805,23 @@ const fetchResults = async (payload) => {
   if (resultsBody) {
     resultsBody.innerHTML = loadingTableRow(6, "Loading results...");
   }
+  if (gpaValue) {
+    gpaValue.innerHTML = '<span class="stat-loading" aria-label="Loading GPA"></span>';
+  }
+  if (cgpaValue) {
+    cgpaValue.innerHTML = '<span class="stat-loading" aria-label="Loading CGPA"></span>';
+  }
   try {
     const result = await postJson("/api/results/query", payload, "Loading results...");
     renderResults(result.data);
     clearError();
   } catch (err) {
+    if (resultsBody) {
+      resultsBody.innerHTML =
+        '<tr><td colspan="6">Unable to load saved results.</td></tr>';
+    }
+    if (gpaValue) gpaValue.textContent = "—";
+    if (cgpaValue) cgpaValue.textContent = "—";
     showError(err.message);
     flash(err.message);
   }
@@ -953,9 +966,6 @@ if (resultsForm) {
       studentNo: formData.get("studentNo"),
       academicYear: formData.get("academicYear"),
       semester: formData.get("semester"),
-      course_id: formData.get("courseId") || undefined,
-      min_total: formData.get("minTotal") || undefined,
-      max_total: formData.get("maxTotal") || undefined,
       sort: formData.get("sort") || "course_code",
       order: formData.get("order") || "asc",
       page: resultsPage,
