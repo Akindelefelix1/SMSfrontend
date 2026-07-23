@@ -10,10 +10,10 @@ const localFlash = (message) => {
   }, 2200);
 };
 
-const store = window.SMISStore;
-if (store) {
+const manageStore = window.SMISStore;
+if (manageStore) {
   (async () => {
-    await store.ensure();
+    await manageStore.ensure();
 
   const escapeHtml = (value) =>
     String(value)
@@ -216,7 +216,7 @@ if (store) {
     const usersBody = document.getElementById("usersBody");
     if (!usersBody) return;
     usersBody.innerHTML = loadingRow(5, "Loading users...");
-    const data = await store.getAll();
+    const data = await manageStore.getAll();
     if (!data.users.length) {
       usersBody.innerHTML = '<tr><td colspan="5" class="muted">No users added yet.</td></tr>';
       return;
@@ -244,7 +244,7 @@ if (store) {
     const studentsBody = document.getElementById("studentsBody");
     if (!studentsBody) return;
     studentsBody.innerHTML = loadingRow(6, "Loading students...");
-    const data = await store.getAll();
+    const data = await manageStore.getAll();
     const filter = getStudentFilter();
     const departmentFilter = getDepartmentFilter();
     const levelFilter = getLevelFilter();
@@ -294,7 +294,7 @@ if (store) {
     const coursesBody = document.getElementById("coursesBody");
     if (!coursesBody) return;
     coursesBody.innerHTML = loadingRow(6, "Loading courses...");
-    const data = await store.getAll();
+    const data = await manageStore.getAll();
     const departmentFilter = courseFilterDepartment ? courseFilterDepartment.value : "";
     const courses = Array.isArray(data.courses) ? data.courses : [];
     const filtered = departmentFilter
@@ -331,7 +331,7 @@ if (store) {
     if (!departmentsBody) return;
     departmentsBody.innerHTML = loadingRow(2, "Loading departments...");
     try {
-      const departments = await store.getDepartments();
+      const departments = await manageStore.getDepartments();
       if (!departments.length) {
         departmentsBody.innerHTML =
           '<tr><td colspan="2" class="muted">No departments added yet.</td></tr>';
@@ -361,7 +361,7 @@ if (store) {
   const populateDepartmentSelects = async () => {
     const selects = document.querySelectorAll("select.department-select");
     if (!selects.length) return;
-    const departments = await store.getDepartments();
+    const departments = await manageStore.getDepartments();
     selects.forEach((select) => {
       const current = select.value;
       select.innerHTML =
@@ -456,7 +456,7 @@ if (store) {
         }
         await withOverlay(
           () =>
-            store.addUser({
+            manageStore.addUser({
               name: formData.get("name"),
               role: formData.get("role"),
               status: formData.get("status"),
@@ -483,7 +483,7 @@ if (store) {
       try {
         await withOverlay(
           () =>
-            store.addStudent({
+            manageStore.addStudent({
               studentNo: formData.get("studentNo"),
               name: formData.get("name"),
               department: formData.get("department"),
@@ -508,7 +508,7 @@ if (store) {
       const formData = new FormData(departmentForm);
       try {
         await withOverlay(
-          () => store.addDepartment({ name: formData.get("name") }),
+          () => manageStore.addDepartment({ name: formData.get("name") }),
           "Adding department..."
         );
         departmentForm.reset();
@@ -528,7 +528,7 @@ if (store) {
       try {
         await withOverlay(
           () =>
-            store.addCourse({
+            manageStore.addCourse({
               department: formData.get("department"),
               code: formData.get("code"),
               title: formData.get("title"),
@@ -551,7 +551,7 @@ if (store) {
     usersBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-user-edit]");
       const deleteBtn = event.target.closest("[data-user-delete]");
-      const data = await store.getAll();
+      const data = await manageStore.getAll();
 
       if (editBtn) {
         const userId = editBtn.getAttribute("data-user-edit");
@@ -596,7 +596,7 @@ if (store) {
         try {
           await withOverlay(
             () =>
-              store.updateUser(userId, {
+              manageStore.updateUser(userId, {
                 name: updated.name,
                 role: updated.role,
                 status: updated.status,
@@ -617,7 +617,7 @@ if (store) {
         const confirmed = await confirmModal("Delete user", "Delete this user?", "Delete");
         if (!confirmed) return;
         try {
-          await withOverlay(() => store.deleteUser(userId), "Deleting user...");
+          await withOverlay(() => manageStore.deleteUser(userId), "Deleting user...");
           await refreshAllTables();
           localFlash("User deleted.");
         } catch (error) {
@@ -632,8 +632,8 @@ if (store) {
     studentsBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-student-edit]");
       const deleteBtn = event.target.closest("[data-student-delete]");
-      const data = await store.getAll();
-      const departmentNames = (await store.getDepartments()).map((department) => department.name);
+      const data = await manageStore.getAll();
+      const departmentNames = (await manageStore.getDepartments()).map((department) => department.name);
 
       if (editBtn) {
         const studentId = editBtn.getAttribute("data-student-edit");
@@ -684,7 +684,7 @@ if (store) {
         try {
           await withOverlay(
             () =>
-              store.updateStudent(studentId, {
+              manageStore.updateStudent(studentId, {
                 studentNo: updated.studentNo,
                 name: updated.name,
                 department: updated.department,
@@ -709,7 +709,7 @@ if (store) {
         );
         if (!confirmed) return;
         try {
-          await withOverlay(() => store.deleteStudent(studentId), "Deleting student...");
+          await withOverlay(() => manageStore.deleteStudent(studentId), "Deleting student...");
           await refreshAllTables();
           localFlash("Student deleted.");
         } catch (error) {
@@ -724,7 +724,7 @@ if (store) {
     departmentsBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-department-edit]");
       const deleteBtn = event.target.closest("[data-department-delete]");
-      const departments = await store.getDepartments();
+      const departments = await manageStore.getDepartments();
 
       if (editBtn) {
         const departmentId = editBtn.getAttribute("data-department-edit");
@@ -742,7 +742,7 @@ if (store) {
 
         try {
           await withOverlay(
-            () => store.updateDepartment(departmentId, { name: updated.name }),
+            () => manageStore.updateDepartment(departmentId, { name: updated.name }),
             "Updating department..."
           );
           await refreshAllTables();
@@ -757,7 +757,7 @@ if (store) {
         const confirmed = await confirmModal("Delete department", "Delete this department?", "Delete");
         if (!confirmed) return;
         try {
-          await withOverlay(() => store.deleteDepartment(departmentId), "Deleting department...");
+          await withOverlay(() => manageStore.deleteDepartment(departmentId), "Deleting department...");
           await refreshAllTables();
           localFlash("Department deleted.");
         } catch (error) {
@@ -772,7 +772,7 @@ if (store) {
     coursesBody.addEventListener("click", async (event) => {
       const editBtn = event.target.closest("[data-course-edit]");
       const deleteBtn = event.target.closest("[data-course-delete]");
-      const data = await store.getAll();
+      const data = await manageStore.getAll();
 
       if (editBtn) {
         const courseId = editBtn.getAttribute("data-course-edit");
@@ -782,7 +782,7 @@ if (store) {
           return;
         }
 
-        const departments = await store.getDepartments();
+        const departments = await manageStore.getDepartments();
         const updated = await formModal("Edit course", [
           {
             name: "department",
@@ -813,7 +813,7 @@ if (store) {
         try {
           await withOverlay(
             () =>
-              store.updateCourse(courseId, {
+              manageStore.updateCourse(courseId, {
                 department: updated.department,
                 code: updated.code,
                 title: updated.title,
@@ -838,7 +838,7 @@ if (store) {
         );
         if (!confirmed) return;
         try {
-          await withOverlay(() => store.deleteCourse(courseId), "Deleting course...");
+          await withOverlay(() => manageStore.deleteCourse(courseId), "Deleting course...");
           await refreshAllTables();
           localFlash("Course deleted.");
         } catch (error) {
@@ -852,7 +852,7 @@ if (store) {
   if (exportBtn) {
     exportBtn.addEventListener("click", async () => {
       try {
-        const payload = await store.exportData();
+        const payload = await manageStore.exportData();
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -876,7 +876,7 @@ if (store) {
       if (!file) return;
       try {
         const rawText = await file.text();
-        await store.importData(rawText);
+        await manageStore.importData(rawText);
         await refreshAllTables();
         localFlash("Data imported.");
       } catch (error) {
@@ -891,7 +891,7 @@ if (store) {
     resetBtn.addEventListener("click", async () => {
       if (!window.confirm("Reset backend data? This removes departments, students, courses, registrations, results, submissions, and tasks.")) return;
       try {
-        await withOverlay(() => store.resetData(), "Resetting backend data...");
+        await withOverlay(() => manageStore.resetData(), "Resetting backend data...");
         await refreshAllTables();
         localFlash("Backend data reset.");
       } catch (error) {
