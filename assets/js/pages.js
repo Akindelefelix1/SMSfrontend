@@ -829,7 +829,7 @@ const resultsNext = document.getElementById("resultsNext");
 const resultsPageInfo = document.getElementById("resultsPageInfo");
 
 let resultsPage = 1;
-const resultsLimit = 5;
+const resultsLimit = 10000;
 let lastResultsPayload = null;
 
 const renderResults = (data) => {
@@ -907,9 +907,7 @@ const refreshReportCourseDropdown = async () => {
   if (!store || !reportCourse) return;
 
   const studentNo = reportStudentNo ? reportStudentNo.value : "";
-  const academicYear = reportAcademicYear ? reportAcademicYear.value : "";
-  const semester = reportSemester ? reportSemester.value : "";
-  const registered = await store.getRegisteredCourses({ studentNo, academicYear, semester });
+  const registered = await store.getRegisteredCourses({ studentNo });
 
   reportCourse.innerHTML =
     '<option value="">Select registered course</option>' +
