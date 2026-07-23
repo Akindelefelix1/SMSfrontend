@@ -59,6 +59,20 @@
       </a>
     </section>
 
+    <section class="card dashboard-recent-card" aria-labelledby="recentRegistrationsTitle">
+      <div class="card-header dashboard-section-header">
+        <div>
+          <span class="section-eyebrow">Registration activity</span>
+          <h2 id="recentRegistrationsTitle">Recent Registrations</h2>
+          <p class="muted">The six most recently submitted course registrations.</p>
+        </div>
+        <a class="btn btn-outline" href="registrations.html">View all registrations</a>
+      </div>
+      <ul class="recent-registration-grid" id="recentRegistrations">
+        <li class="loading-inline">Loading registrations...</li>
+      </ul>
+    </section>
+
     <section class="grid">
       <div class="card" data-role="admin">
         <h3>Registration Deadline</h3>
@@ -80,26 +94,6 @@
         <div class="mini-form" style="margin-top: 12px;">
           <input type="text" id="adminStudentSearch" placeholder="e.g. 20/1234" />
           <button class="btn" id="adminStudentSearchBtn" type="button">Search</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <h3>Recent Registrations</h3>
-          <div class="mini-form">
-            <input type="text" id="recentStudentNo" placeholder="Student no" />
-            <input type="text" id="recentCourseCode" placeholder="Course code" />
-            <button class="btn btn-outline" id="recentFilterBtn" type="button">Filter</button>
-          </div>
-        </div>
-        <ul class="list" id="recentRegistrations">
-          <li>20/1234 - B.Sc Computer Science</li>
-          <li>20/4521 - B.Ed Mathematics</li>
-          <li>21/9832 - B.Sc Biology</li>
-        </ul>
-        <div class="pager">
-          <button class="btn btn-outline" id="recentPrev" type="button">Prev</button>
-          <span id="recentPageInfo" class="muted">Page 1</span>
-          <button class="btn btn-outline" id="recentNext" type="button">Next</button>
         </div>
       </div>
       <div class="card">

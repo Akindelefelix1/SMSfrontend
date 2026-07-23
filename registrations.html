@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student Management System - Registrations</title>
+  <script src="assets/js/config.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body class="page">
+  <header class="topbar">
+    <div class="container">
+      <a class="brand" href="index.html">Student Management System</a>
+      <nav class="nav" aria-label="Primary navigation"></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <span class="section-eyebrow">Admin records</span>
+        <h1>All Registrations</h1>
+        <p>Review every submitted course registration in one place.</p>
+      </div>
+      <a class="btn btn-outline" href="dashboard.html">Back to Dashboard</a>
+    </section>
+
+    <section class="card registrations-view">
+      <div class="card-header registrations-toolbar">
+        <div>
+          <h2>Registration Records</h2>
+          <p class="muted" id="registrationRecordCount">Loading records...</p>
+        </div>
+        <form class="registration-filters" id="allRegistrationsFilter">
+          <label>
+            <span>Student number</span>
+            <input type="search" id="allRegistrationStudent" placeholder="Search student no" />
+          </label>
+          <label>
+            <span>Course</span>
+            <input type="search" id="allRegistrationCourse" placeholder="Search course code" />
+          </label>
+          <button class="btn" type="submit">Search</button>
+          <button class="btn btn-outline" id="clearRegistrationFilters" type="button">Clear</button>
+        </form>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table registrations-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Registration No.</th>
+              <th>Academic Year</th>
+              <th>Semester</th>
+              <th>Courses</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="allRegistrationsBody">
+            <tr><td colspan="6" class="loading-inline">Loading registrations...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="registrations-footer">
+        <span class="muted" id="allRegistrationsPageInfo">Page 1 of 1</span>
+        <div class="pager">
+          <button class="btn btn-outline" id="allRegistrationsPrev" type="button">Previous</button>
+          <button class="btn btn-outline" id="allRegistrationsNext" type="button">Next</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/js/api-store.js"></script>
+  <script src="assets/js/pages.js"></script>
+</body>
+</html>

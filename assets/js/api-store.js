@@ -155,6 +155,15 @@
   const deleteCourse = async (id) => (await deleteJson(`/api/courses/${id}`)).data;
 
   const addRegistration = async (payload) => (await postJson("/api/registrations", payload)).data;
+  const getRegistrations = async (payload = {}) => {
+    const params = new URLSearchParams({
+      page: payload.page || 1,
+      limit: payload.limit || 10,
+    });
+    if (payload.studentNo) params.set("studentNo", payload.studentNo);
+    if (payload.courseCode) params.set("courseCode", payload.courseCode);
+    return (await getJson(`/api/registrations?${params.toString()}`)).data;
+  };
   const getRegistrationSettings = async () =>
     (await getJson("/api/settings/registration")).data;
   const updateRegistrationSettings = async (payload) =>
@@ -254,6 +263,7 @@
     updateCourse,
     deleteCourse,
     addRegistration,
+    getRegistrations,
     getRegistrationSettings,
     updateRegistrationSettings,
     addResult,

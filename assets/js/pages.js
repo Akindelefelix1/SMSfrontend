@@ -66,6 +66,7 @@ const buildNav = (role) => {
     links.push(
       { label: "Dashboard", href: "dashboard.html" },
       { label: "Students", href: "students.html" },
+      { label: "Registrations", href: "registrations.html" },
       { label: "Users", href: "users.html" },
       { label: "Catalog", href: "catalog.html" },
       { label: "Reports", href: "reports.html" },
@@ -128,7 +129,8 @@ const applyRouteGuard = (role) => {
     "students.html",
     "users.html",
     "catalog.html",
-    "reports.html"
+    "reports.html",
+    "registrations.html"
   ]);
   const studentPages = new Set([
     "student-dashboard.html",
@@ -140,25 +142,39 @@ const applyRouteGuard = (role) => {
 
   if (page === "login.html" && role) {
     const target = role === "admin" || role === "super_admin" ? "dashboard.html" : "student-dashboard.html";
-    window.location.href = target;
+    window.location.replace(target);
     return;
   }
 
   if (!role) {
     if (adminPages.has(page) || studentPages.has(page) || sharedPages.has(page)) {
-      window.location.href = "login.html";
+      window.location.replace("login.html");
     }
     return;
   }
 
   if ((role === "admin" || role === "super_admin") && studentPages.has(page)) {
-    window.location.href = "dashboard.html";
+    window.location.replace("dashboard.html");
     return;
   }
 
   if (role === "student" && adminPages.has(page)) {
-    window.location.href = "student-dashboard.html";
+    window.location.replace("student-dashboard.html");
   }
+};
+
+const isProtectedPage = () => {
+  const page = getPageName();
+  return new Set([
+    "dashboard.html",
+    "students.html",
+    "users.html",
+    "catalog.html",
+    "reports.html",
+    "student-dashboard.html",
+    "registration.html",
+    "results.html",
+  ]).has(page);
 };
 
 const applySessionDetails = (session) => {
@@ -387,15 +403,98 @@ const bootNavigation = () => {
   initAdminSearch();
 };
 
-document.addEventListener("click", (event) => {
+const confirmLogout = () =>
+  new Promise((resolve) => {
+    const previousFocus = document.activeElement;
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop logout-modal-backdrop";
+    backdrop.setAttribute("role", "presentation");
+    backdrop.innerHTML = `
+      <section
+        class="modal-card logout-modal"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="logoutModalTitle"
+        aria-describedby="logoutModalDescription"
+      >
+        <button class="logout-modal-close" type="button" aria-label="Close logout confirmation">&times;</button>
+        <div class="logout-modal-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M10 17l5-5-5-5M15 12H3M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5" />
+          </svg>
+        </div>
+        <div class="logout-modal-copy">
+          <h3 id="logoutModalTitle">Log out of your account?</h3>
+          <p id="logoutModalDescription">You will need to sign in again to access your dashboard and academic information.</p>
+        </div>
+        <div class="modal-actions logout-modal-actions">
+          <button class="btn btn-outline" type="button" data-logout-cancel>Stay logged in</button>
+          <button class="btn logout-confirm-btn" type="button" data-logout-confirm>Yes, log out</button>
+        </div>
+      </section>
+    `;
+
+    const finish = (confirmed) => {
+      document.removeEventListener("keydown", handleKeydown);
+      backdrop.remove();
+      document.body.classList.remove("modal-open");
+      if (!confirmed && previousFocus instanceof HTMLElement) previousFocus.focus();
+      resolve(confirmed);
+    };
+
+    const handleKeydown = (event) => {
+      if (event.key === "Escape") finish(false);
+      if (event.key !== "Tab") return;
+
+      const controls = Array.from(
+        backdrop.querySelectorAll("button:not([disabled]), [href], input, select, textarea")
+      );
+      if (!controls.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    backdrop.addEventListener("click", (event) => {
+      if (
+        event.target === backdrop ||
+        event.target.closest("[data-logout-cancel], .logout-modal-close")
+      ) {
+        finish(false);
+      } else if (event.target.closest("[data-logout-confirm]")) {
+        finish(true);
+      }
+    });
+
+    document.body.appendChild(backdrop);
+    document.body.classList.add("modal-open");
+    document.addEventListener("keydown", handleKeydown);
+    backdrop.querySelector("[data-logout-cancel]").focus();
+  });
+
+document.addEventListener("click", async (event) => {
   const logout = event.target.closest("[data-logout]");
   if (!logout) return;
   event.preventDefault();
+  const confirmed = await confirmLogout();
+  if (!confirmed) return;
   clearSession();
-  window.location.href = "login.html";
+  window.location.replace("login.html");
 });
 
 bootNavigation();
+
+window.addEventListener("pageshow", () => {
+  if (!getSession() && isProtectedPage()) {
+    window.location.replace("login.html");
+  }
+});
 
 const flash = (message) => {
   const toast = document.createElement("div");
@@ -1221,8 +1320,7 @@ if (resultsNext) {
 
 const dashboardStats = document.getElementById("statStudents");
 if (dashboardStats) {
-  let recentPage = 1;
-  const recentLimit = 3;
+  const recentLimit = 6;
   const taskForm = document.getElementById("taskForm");
   const taskInput = document.getElementById("taskInput");
   const taskList = document.getElementById("taskList");
@@ -1289,25 +1387,33 @@ if (dashboardStats) {
     setStat("statHolds", data.registrationHolds);
 
     const recentList = document.getElementById("recentRegistrations");
-    const recentPageInfo = document.getElementById("recentPageInfo");
     if (recentList) {
       recentList.innerHTML = data.recentRegistrations.length
-        ? data.recentRegistrations.map((item) => `<li>${item}</li>`).join("")
-        : "<li>No recent registrations.</li>";
+        ? data.recentRegistrations
+            .map((item, index) => {
+              const label = typeof item === "string"
+                ? item
+                : `${item.studentNo} - ${(item.courses && item.courses[0]) || "No course selected"}`;
+              const parts = label.split(" - ");
+              const studentNo = parts.shift() || "Unknown student";
+              const course = parts.join(" - ") || "No course selected";
+              return `
+                <li class="recent-registration-item">
+                  <span class="recent-registration-number">${String(index + 1).padStart(2, "0")}</span>
+                  <span>
+                    <strong>${escapeHtml(studentNo)}</strong>
+                    <small>${escapeHtml(course)}</small>
+                  </span>
+                  <span class="status-badge status-accepted">Registered</span>
+                </li>`;
+            })
+            .join("")
+        : '<li class="empty-state recent-registration-empty">No recent registrations yet.</li>';
     }
     renderTaskItems(data.tasks);
-    if (recentPageInfo) {
-      const meta = data.recentMeta || {
-        page: recentPage,
-        pages: 1,
-      };
-      recentPageInfo.textContent = `Page ${meta.page} of ${meta.pages}`;
-    }
   };
 
   const fetchDashboard = async () => {
-    const recentStudentNo = document.getElementById("recentStudentNo");
-    const recentCourseCode = document.getElementById("recentCourseCode");
     const recentList = document.getElementById("recentRegistrations");
     ["statStudents", "statDepartments", "statResults", "statHolds"].forEach((id) => {
       const node = document.getElementById(id);
@@ -1322,10 +1428,8 @@ if (dashboardStats) {
       const data = await withLoading(
         () =>
           store.getDashboardData({
-            page: recentPage,
+            page: 1,
             limit: recentLimit,
-            studentNo: recentStudentNo ? recentStudentNo.value.trim() : "",
-            courseCode: recentCourseCode ? recentCourseCode.value.trim() : "",
           }),
         "Loading dashboard..."
       );
@@ -1403,30 +1507,113 @@ if (dashboardStats) {
     });
   }
 
-  const recentPrev = document.getElementById("recentPrev");
-  const recentNext = document.getElementById("recentNext");
-  const recentFilterBtn = document.getElementById("recentFilterBtn");
+}
 
-  if (recentPrev) {
-    recentPrev.addEventListener("click", () => {
-      if (recentPage > 1) {
-        recentPage -= 1;
-        fetchDashboard();
-      }
+const allRegistrationsBody = document.getElementById("allRegistrationsBody");
+if (allRegistrationsBody && store) {
+  const filterForm = document.getElementById("allRegistrationsFilter");
+  const studentInput = document.getElementById("allRegistrationStudent");
+  const courseInput = document.getElementById("allRegistrationCourse");
+  const clearButton = document.getElementById("clearRegistrationFilters");
+  const previousButton = document.getElementById("allRegistrationsPrev");
+  const nextButton = document.getElementById("allRegistrationsNext");
+  const pageInfo = document.getElementById("allRegistrationsPageInfo");
+  const recordCount = document.getElementById("registrationRecordCount");
+  let currentPage = 1;
+  let totalPages = 1;
+
+  const formatRegistrationDate = (value) => {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return "—";
+    return date.toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const renderRegistrations = (payload) => {
+    const rows = Array.isArray(payload.registrations) ? payload.registrations : [];
+    const meta = payload.meta || {};
+    currentPage = Number(meta.page || 1);
+    totalPages = Number(meta.pages || 1);
+
+    allRegistrationsBody.innerHTML = rows.length
+      ? rows
+          .map((registration) => {
+            const courses = Array.isArray(registration.courses) ? registration.courses : [];
+            const studentName = registration.student && registration.student.name
+              ? registration.student.name
+              : "Student";
+            return `
+              <tr>
+                <td><strong>${escapeHtml(registration.studentNo)}</strong><small class="table-secondary">${escapeHtml(studentName)}</small></td>
+                <td>${escapeHtml(registration.regNo)}</td>
+                <td>${escapeHtml(registration.academicYear)}</td>
+                <td>${escapeHtml(registration.semester)}</td>
+                <td><span class="course-count">${courses.length} course${courses.length === 1 ? "" : "s"}</span><small class="table-secondary">${escapeHtml(courses.join(", ") || "No courses")}</small></td>
+                <td>${escapeHtml(formatRegistrationDate(registration.createdAt))}</td>
+              </tr>`;
+          })
+          .join("")
+      : '<tr><td colspan="6" class="empty-state registrations-empty">No registrations match your search.</td></tr>';
+
+    if (recordCount) {
+      const total = Number(meta.total || 0);
+      recordCount.textContent = `${total.toLocaleString()} registration${total === 1 ? "" : "s"} found`;
+    }
+    if (pageInfo) pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    if (previousButton) previousButton.disabled = currentPage <= 1;
+    if (nextButton) nextButton.disabled = currentPage >= totalPages;
+  };
+
+  const loadRegistrations = async () => {
+    allRegistrationsBody.innerHTML =
+      '<tr><td colspan="6" class="loading-inline">Loading registrations...</td></tr>';
+    try {
+      const payload = await store.getRegistrations({
+        page: currentPage,
+        limit: 10,
+        studentNo: studentInput ? studentInput.value.trim() : "",
+        courseCode: courseInput ? courseInput.value.trim() : "",
+      });
+      renderRegistrations(payload);
+      clearError();
+    } catch (error) {
+      allRegistrationsBody.innerHTML =
+        '<tr><td colspan="6" class="empty-state registrations-empty">Unable to load registrations.</td></tr>';
+      showError(error.message || "Unable to load registrations.");
+    }
+  };
+
+  if (filterForm) {
+    filterForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      currentPage = 1;
+      loadRegistrations();
+    });
+  }
+  if (clearButton) {
+    clearButton.addEventListener("click", () => {
+      if (filterForm) filterForm.reset();
+      currentPage = 1;
+      loadRegistrations();
+    });
+  }
+  if (previousButton) {
+    previousButton.addEventListener("click", () => {
+      if (currentPage <= 1) return;
+      currentPage -= 1;
+      loadRegistrations();
+    });
+  }
+  if (nextButton) {
+    nextButton.addEventListener("click", () => {
+      if (currentPage >= totalPages) return;
+      currentPage += 1;
+      loadRegistrations();
     });
   }
 
-  if (recentNext) {
-    recentNext.addEventListener("click", () => {
-      recentPage += 1;
-      fetchDashboard();
-    });
-  }
-
-  if (recentFilterBtn) {
-    recentFilterBtn.addEventListener("click", () => {
-      recentPage = 1;
-      fetchDashboard();
-    });
-  }
+  loadRegistrations();
 }
