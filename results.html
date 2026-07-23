@@ -25,7 +25,7 @@
         <h1>Semester Results</h1>
         <p>View grades, GPA, and CGPA summary.</p>
       </div>
-      <a class="btn btn-outline" href="reports.html">Download PDF</a>
+      <button class="btn btn-outline" type="button" onclick="window.print()">Download PDF</button>
     </section>
 
     <form id="reportEntryForm" data-role="admin">
@@ -98,7 +98,7 @@
     <form id="resultsForm">
       <section class="card">
         <div class="form-grid">
-          <label>
+          <label id="resultsStudentField">
             <span>Student No</span>
             <select name="studentNo" id="resultsStudentNo" required>
               <option value="">Select student</option>
@@ -136,8 +136,8 @@
             </select>
           </label>
         </div>
-        <div class="actions" style="margin-top: 16px;">
-          <button class="btn" type="submit">Fetch Results</button>
+        <div class="actions" id="resultsSubmitActions" style="margin-top: 16px;">
+          <button class="btn" id="resultsSubmitButton" type="submit">Fetch Results</button>
         </div>
       </section>
     </form>
@@ -157,7 +157,7 @@
         </thead>
         <tbody id="resultsBody">
           <tr>
-            <td colspan="6">Select a student and fetch their results.</td>
+            <td colspan="6">Loading results...</td>
           </tr>
         </tbody>
       </table>

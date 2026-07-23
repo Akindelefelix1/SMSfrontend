@@ -501,11 +501,11 @@ const bootNavigation = () => {
   applyRoleVisibility(role);
   applySessionDetails(session);
   applyRouteGuard(role);
-  renderAdminActivity();
-  renderSystemStatus();
-  renderStudentDashboard();
-  initAdminSearch();
 };
+
+// Build the authenticated application shell before page-specific API work.
+// This keeps the sidebar available even when a page request or widget fails.
+bootNavigation();
 
 const confirmLogout = () =>
   new Promise((resolve) => {
@@ -1056,6 +1056,25 @@ const cgpaValue = document.getElementById("cgpaValue");
 const resultsPrev = document.getElementById("resultsPrev");
 const resultsNext = document.getElementById("resultsNext");
 const resultsPageInfo = document.getElementById("resultsPageInfo");
+const resultsStudentField = document.getElementById("resultsStudentField");
+const resultsSubmitButton = document.getElementById("resultsSubmitButton");
+const resultsSession = getSession();
+const isStudentResults =
+  Boolean(resultsSession && resultsSession.role === "student" && resultsForm);
+
+if (isStudentResults) {
+  document.body.classList.add("student-results-mode");
+  if (resultsStudentField) resultsStudentField.hidden = true;
+  if (resultsStudentNo) {
+    resultsStudentNo.innerHTML = `<option value="${escapeHtml(resultsSession.username)}">${escapeHtml(resultsSession.username)}</option>`;
+    resultsStudentNo.value = resultsSession.username;
+    resultsStudentNo.removeAttribute("required");
+  }
+  if (resultsSubmitButton) resultsSubmitButton.textContent = "Apply Filters";
+} else if (resultsBody) {
+  resultsBody.innerHTML =
+    '<tr><td colspan="6" class="empty-state">Select a student and fetch their results.</td></tr>';
+}
 
 let resultsPage = 1;
 const resultsLimit = 10000;
@@ -1116,6 +1135,7 @@ const fetchResults = async (payload) => {
 
 const populateStudentDropdowns = async () => {
   if (!store) return;
+  if (isStudentResults) return;
   const students = await store.getStudentsByDepartment("");
   const options =
     '<option value="">Select student</option>' +
@@ -1127,13 +1147,14 @@ const populateStudentDropdowns = async () => {
       .join("");
 
   if (reportStudentNo) reportStudentNo.innerHTML = options;
-  if (resultsStudentNo) resultsStudentNo.innerHTML = options;
+  if (resultsStudentNo && !isStudentResults) resultsStudentNo.innerHTML = options;
 };
 
 populateStudentDropdowns();
 
 const refreshReportCourseDropdown = async () => {
   if (!store || !reportCourse) return;
+  if (isStudentResults) return;
 
   const studentNo = reportStudentNo ? reportStudentNo.value : "";
   const registered = await store.getRegisteredCourses({ studentNo });
@@ -1248,7 +1269,9 @@ if (resultsForm) {
     const formData = new FormData(resultsForm);
     resultsPage = 1;
     lastResultsPayload = {
-      studentNo: formData.get("studentNo"),
+      studentNo: isStudentResults
+        ? String(resultsSession.username || "")
+        : formData.get("studentNo"),
       academicYear: formData.get("academicYear"),
       semester: formData.get("semester"),
       sort: formData.get("sort") || "course_code",
@@ -1258,6 +1281,20 @@ if (resultsForm) {
     };
     await fetchResults(lastResultsPayload);
   });
+
+  if (isStudentResults) {
+    const formData = new FormData(resultsForm);
+    lastResultsPayload = {
+      studentNo: String(resultsSession.username || ""),
+      academicYear: formData.get("academicYear"),
+      semester: formData.get("semester"),
+      sort: formData.get("sort") || "course_code",
+      order: formData.get("order") || "asc",
+      page: 1,
+      limit: resultsLimit,
+    };
+    fetchResults(lastResultsPayload);
+  }
 }
 
 if (resultsPrev) {
@@ -1748,4 +1785,7 @@ if (allRegistrationsBody && store) {
   loadRegistrations();
 }
 
-bootNavigation();
+renderAdminActivity();
+renderSystemStatus();
+renderStudentDashboard();
+initAdminSearch();

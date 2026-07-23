@@ -2357,6 +2357,20 @@ body.modal-open {
   line-height: 1.5;
 }
 
+.student-results-mode #resultsForm .form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.student-results-mode #resultsForm .card {
+  padding-block: 18px;
+}
+
+@media (max-width: 900px) {
+  .student-results-mode #resultsForm .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 1180px) {
   .student-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2445,6 +2459,10 @@ body.modal-open {
   .student-notice {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .student-results-mode #resultsForm .form-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
