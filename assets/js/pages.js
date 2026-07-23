@@ -851,6 +851,8 @@ const refreshReportCourseDropdown = async () => {
 
   if (reportUnit) {
     reportUnit.value = "";
+    reportUnit.readOnly = false;
+    reportUnit.title = "Enter the course unit.";
   }
 };
 
@@ -865,7 +867,12 @@ if (reportCourse) {
   reportCourse.addEventListener("change", () => {
     const selected = reportCourse.options[reportCourse.selectedIndex];
     if (reportUnit) {
-      reportUnit.value = selected ? selected.getAttribute("data-unit") || "" : "";
+      const courseUnit = selected ? selected.getAttribute("data-unit") : "";
+      reportUnit.value = courseUnit || "";
+      reportUnit.readOnly = Boolean(courseUnit);
+      reportUnit.title = courseUnit
+        ? "This unit is set by the selected course."
+        : "Enter the course unit.";
     }
   });
 }
@@ -1198,14 +1205,22 @@ if (dashboardStats) {
 
   const renderDashboard = (data) => {
     const safeNumber = (value) => {
+      if (value === null || value === undefined || value === "") return "—";
       const numeric = Number(value);
-      return Number.isFinite(numeric) ? numeric : 0;
+      return Number.isFinite(numeric) ? numeric.toLocaleString() : "—";
     };
 
-    document.getElementById("statStudents").textContent = safeNumber(data.activeStudents);
-    document.getElementById("statDepartments").textContent = safeNumber(data.departments);
-    document.getElementById("statResults").textContent = safeNumber(data.pendingResults);
-    document.getElementById("statHolds").textContent = safeNumber(data.registrationHolds);
+    const setStat = (id, value) => {
+      const node = document.getElementById(id);
+      if (!node) return;
+      node.textContent = safeNumber(value);
+      node.removeAttribute("aria-label");
+    };
+
+    setStat("statStudents", data.activeStudents);
+    setStat("statDepartments", data.departments);
+    setStat("statResults", data.pendingResults);
+    setStat("statHolds", data.registrationHolds);
 
     const recentList = document.getElementById("recentRegistrations");
     const recentPageInfo = document.getElementById("recentPageInfo");
@@ -1228,6 +1243,12 @@ if (dashboardStats) {
     const recentStudentNo = document.getElementById("recentStudentNo");
     const recentCourseCode = document.getElementById("recentCourseCode");
     const recentList = document.getElementById("recentRegistrations");
+    ["statStudents", "statDepartments", "statResults", "statHolds"].forEach((id) => {
+      const node = document.getElementById(id);
+      if (!node) return;
+      node.setAttribute("aria-label", "Loading statistic");
+      node.innerHTML = '<span class="stat-loading" aria-hidden="true"></span>';
+    });
     if (recentList) {
       recentList.innerHTML = loadingListItem("Loading registrations...");
     }
@@ -1245,6 +1266,12 @@ if (dashboardStats) {
       renderDashboard(data);
       clearError();
     } catch (err) {
+      ["statStudents", "statDepartments", "statResults", "statHolds"].forEach((id) => {
+        const node = document.getElementById(id);
+        if (!node) return;
+        node.textContent = "—";
+        node.setAttribute("aria-label", "Statistic unavailable");
+      });
       showError(err.message || "Dashboard unavailable.");
       flash(err.message || "Dashboard unavailable.");
     }

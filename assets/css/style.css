@@ -505,6 +505,16 @@ body.modal-open {
   font-style: italic;
 }
 
+.stat-loading {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5f5;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
 .loading-overlay {
   position: fixed;
   inset: 0;
